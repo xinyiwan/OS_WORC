@@ -27,11 +27,10 @@ def generate_clinical_features(data_path):
     df['Soft_Tissue_Exp'] = df['pid_n'].apply(lambda x: get_clinical_value(x, 'Soft_Tissue_Exp'))
 
     # save only features
-    df.to_csv(f'{data_path}/clinical_features.csv', index=False)
-    df['Huvosnew'] = df['pid_n'].apply(lambda x: get_clinical_value(x, 'Huvosnew'))
-
-    # Replace the column name 'pid_n' to 'Patient' to match label file
     df.rename(columns={'pid_n': 'Patient'}, inplace=True)
+    df.to_csv(f'{data_path}/clinical_features.csv', index=False)
+    df['Huvosnew'] = df['Patient'].apply(lambda x: get_clinical_value(x, 'Huvosnew'))
+
 
     # save features with ground truth Huvos
     df.to_csv(f'{data_path}/clinical_features_with_Huvos.csv', index=False)
@@ -62,8 +61,15 @@ def get_clinical_value(pid_n, column_name):
         return None
     
 if __name__ == "__main__":
-    data_path = '/projects/0/prjs1425/Osteosarcoma_WORC/exp_data/T1W'
-    generate_clinical_features(data_path)
+
+    modalities = ['T2W_FS', 'T1W_FS_C']
+    versions = ['0', '1', '9'] 
+    # modalities = ['T1W']
+    # versions = ['0', '9'] 
+    for modality in modalities:
+        for version in versions:
+            data_path = f'/projects/0/prjs1425/Osteosarcoma_WORC/exp_data/{modality}/v{version}'
+            generate_clinical_features(data_path)
 
     
 
