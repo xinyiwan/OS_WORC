@@ -744,7 +744,7 @@ def main(modality, version, mode):
     os.makedirs(output_json_dir, exist_ok=True)
 
 
-    prediction = f'/gpfs/work1/0/prjs1425/Osteosarcoma_WORC/WORC_OS_tmp/{modality}_{version}/classify/all/classification_0.hdf5'
+    prediction = f'/gpfs/work1/0/prjs1425/Osteosarcoma_WORC/WORC_SUB_OS_tmp/{modality}_{version}/classify/all/classification_0.hdf5'
     label_data = f'/projects/0/prjs1425/Osteosarcoma_WORC/exp_data/{modality}/{version}/clinical_features_with_Huvos.csv'
     label_type = ['Huvosnew']
     output='scores' 
@@ -756,16 +756,16 @@ def main(modality, version, mode):
                                    output=output,
                                    output_json_dir=output_json_dir)
     
-    with open(os.path.join(output_json_dir, 'y_truths'), 'w') as fp:
+    with open(os.path.join(output_json_dir, 'y_truths.json'), 'w') as fp:
             json.dump(y_truths, fp, indent=4)
     
-    with open(os.path.join(output_json_dir, 'y_scores'), 'w') as fp:
+    with open(os.path.join(output_json_dir, 'y_scores.json'), 'w') as fp:
             json.dump(y_scores, fp, indent=4)
 
-    with open(os.path.join(output_json_dir, 'y_predictions'), 'w') as fp:
+    with open(os.path.join(output_json_dir, 'y_predictions.json'), 'w') as fp:
             json.dump(y_predictions, fp, indent=4)
     
-    with open(os.path.join(output_json_dir, 'pids'), 'w') as fp:
+    with open(os.path.join(output_json_dir, 'pids.json'), 'w') as fp:
             json.dump(pids, fp, indent=4)
 
 
