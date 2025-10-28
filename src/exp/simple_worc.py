@@ -1,7 +1,9 @@
+import os
+os.environ["NUMEXPR_MAX_THREADS"] = "192"  
+
 import sys
 sys.path.append('/projects/0/prjs1425/Osteosarcoma_WORC/WORC')
 from WORC.facade.simpleworc import SimpleWORC
-import os
 
 # These packages are only used in analysing the results
 import pandas as pd
@@ -9,15 +11,14 @@ import json
 import fastr
 import glob
 
-os.environ["NUMEXPR_MAX_THREADS"] = "192"  
 
 # Define the folder this script is in, so we can easily find the example data
-script_path = '/gpfs/work1/0/prjs1425/Osteosarcoma_WORC/WORC_OS_tmp/'
+script_path = '/gpfs/work1/0/prjs1425/Osteosarcoma_WORC/WORC_COM_OS_tmp/'
 
 # Determine whether you would like to use WORC for binary_classification,
 modus = 'binary_classification'
 
-def main(experiment_name, modality, version, mode):
+def main(experiment_name, modality, version, mode, type):
     """Execute WORC Tutorial experiment."""
     print(f"Running in folder: {script_path}.")
     # ---------------------------------------------------------------------------
@@ -25,10 +26,16 @@ def main(experiment_name, modality, version, mode):
     # ---------------------------------------------------------------------------
 
     # File in which the labels (i.e. outcome you want to predict) is stated
-    label_file = f'/projects/0/prjs1425/Osteosarcoma_WORC/exp_data/{modality}/{version}/clinical_features_with_Huvos.csv'
-    label_name = ['Huvosnew']
+    if type == 'Huvos':
+        imagedatadir = f'/projects/0/prjs1425/Osteosarcoma_WORC/exp_data/{modality}/{version}'
+        label_file = f'/projects/0/prjs1425/Osteosarcoma_WORC/exp_data/{modality}/{version}/clinical_features_with_{type}.csv'
+        label_name = ['Huvosnew']
+    if type == 'WIR':
+        imagedatadir = f'/projects/0/prjs1425/Osteosarcoma_WORC/exp_data/WIR/{modality}/{version}'
+        label_file = f'/projects/0/prjs1425/Osteosarcoma_WORC/exp_data/WIR/{modality}/{version}/clinical_features_with_{type}.csv'
+        label_name = ['WIR_label']
+        
 
-    imagedatadir = f'/projects/0/prjs1425/Osteosarcoma_WORC/exp_data/{modality}/{version}'
     image_file_name = 'image.nii.gz'
     segmentation_file_name = 'mask.nii.gz'
 
@@ -53,21 +60,25 @@ def main(experiment_name, modality, version, mode):
                                                  is_training=True)
     
     # Add the clinical features as metadata
-    experiment.semantics_from_this_file(f'/projects/0/prjs1425/Osteosarcoma_WORC/exp_data/{modality}/{version}/clinical_features.csv')
+    if type == 'Huvos':
+        experiment.semantics_from_this_file(os.path.join(imagedatadir, 'clinical_features.csv'))
     experiment.labels_from_this_file(label_file)
     experiment.predict_labels(label_name)
-    experiment.set_fixed_splits
+
+    # Set fixed splits
+    experiment.set_fixed_splits(os.path.join(imagedatadir,'patient_splits.csv'))
+
     experiment.set_image_types(['MRI'])
     experiment.binary_classification(coarse=coarse)
     # Set the temporary directory
     experiment.set_tmpdir(tmpdir)
     # Add evaluation
     experiment.add_evaluation()
-    # Change the config to clinical features only
-    config = experiment._worc.defaultconfig()
-    config = editconfig(config, mode)
-    experiment._worc.configs.append(config)
-    
+
+    # Change the config for including clinical features or not
+    overrides = editconfig(mode=mode)
+    experiment.add_config_overrides(overrides)
+        
     # Run the experiment!
     experiment.execute()
 
@@ -113,80 +124,84 @@ def main(experiment_name, modality, version, mode):
     for k, v in stats.items():
         print(f"\t {k} {v}.")
 
-def editconfig(config, mode=0):
+def editconfig(mode=0):
 
     """
     mode 0 - no semantic features
     mode 1 - with semantic features
-    mode 2 - only use semantic featrues
+    mode 2 - only use semantic features
+    mode 3 - histogram + semantic features
     """
 
-    config['General']['Segmentix'] = 'True'
-    config['General']['AssumeSameImageAndMaskMetadata'] = 'True'
-    config['General']['tempsave'] = 'True'
-
-    config['Classification']['fastr'] = 'True'
-    config['Classification']['fastr_plugin'] = 'DRMAAExecution'
-    config['ImageFeatures']['image_type'] = 'MRI'
-
-    config['Labels']['label_names'] = 'Huvosnew'
-    config['Labels']['modus'] = 'binary_classification'
-
+    overrides = {
+                'General': {
+                    'AssumeSameImageAndMaskMetadata': 'True',
+                    },
+                'CrossValidation': {
+                   'N_iterations': '20',
+                  }
+        }
+    
     if mode == 1:
-        # with semantic features
-        config['SelectFeatGroup']['semantic_features'] = 'True'
-
+        # Add semantic features to existing overrides
+        overrides['SelectFeatGroup'] = {
+            'semantic_features': 'True'
+        }
     if mode == 2:
-        # Lines below are used for semantic model only!
-        config['SelectFeatGroup']['semantic_features'] = 'True'
-        config['SelectFeatGroup']['shape_features'] = 'False'
-        config['SelectFeatGroup']['histogram_features'] = 'False'
-        config['SelectFeatGroup']['orientation_features'] = 'False'
-        config['SelectFeatGroup']['texture_Gabor_features'] = 'False'
-        config['SelectFeatGroup']['texture_GLCM_features'] = 'False'
-        config['SelectFeatGroup']['texture_GLDM_features'] = 'False'
-        config['SelectFeatGroup']['texture_GLCMMS_features'] = 'False'
-        config['SelectFeatGroup']['texture_GLRLM_features'] = 'False'
-        config['SelectFeatGroup']['texture_GLSZM_features'] = 'False'
-        config['SelectFeatGroup']['texture_GLDZM_features'] = 'False'
-        config['SelectFeatGroup']['texture_NGTDM_features'] = 'False'
-        config['SelectFeatGroup']['texture_NGLDM_features'] = 'False'
-        config['SelectFeatGroup']['texture_LBP_features'] = 'False'
-        config['SelectFeatGroup']['dicom_features'] = 'False'
-        config['SelectFeatGroup']['vessel_features'] = 'False'
-        config['SelectFeatGroup']['phase_features'] = 'False'
-        config['SelectFeatGroup']['fractal_features'] = 'False'
-        config['SelectFeatGroup']['location_features'] = 'False'
-        config['SelectFeatGroup']['rgrd_features'] = 'False'
-        config['SelectFeatGroup']['original_features'] = 'True'
-        config['SelectFeatGroup']['wavelet_features'] = 'False'
-        config['SelectFeatGroup']['log_features'] = 'False'
+        overrides['SelectFeatGroup'] = {
+            'semantic_features': 'True',
+            'shape_features': 'False',
+            'histogram_features': 'False',
+            'orientation_features': 'False',
+            'texture_Gabor_features': 'False',
+            'texture_GLCM_features': 'False',
+            'texture_GLDM_features': 'False',
+            'texture_GLCMMS_features': 'False',
+            'texture_GLRLM_features': 'False',
+            'texture_GLSZM_features': 'False',
+            'texture_GLDZM_features': 'False',
+            'texture_NGTDM_features': 'False',
+            'texture_NGLDM_features': 'False',
+            'texture_LBP_features': 'False',
+            'dicom_features': 'False',
+            'vessel_features': 'False',
+            'phase_features': 'False',
+            'fractal_features': 'False',
+            'location_features': 'False',
+            'rgrd_features': 'False',
+            'original_features': 'True',
+            'wavelet_features': 'False',
+            'log_features': 'False',
+        }
+    if mode == 3:
+            overrides['SelectFeatGroup'] = {
+                'semantic_features': 'True',
+                'shape_features': 'False',
+                'histogram_features': 'True',
+                'orientation_features': 'False',
+                'texture_Gabor_features': 'False',
+                'texture_GLCM_features': 'False',
+                'texture_GLDM_features': 'False',
+                'texture_GLCMMS_features': 'False',
+                'texture_GLRLM_features': 'False',
+                'texture_GLSZM_features': 'False',
+                'texture_GLDZM_features': 'False',
+                'texture_NGTDM_features': 'False',
+                'texture_NGLDM_features': 'False',
+                'texture_LBP_features': 'False',
+                'dicom_features': 'False',
+                'vessel_features': 'False',
+                'phase_features': 'False',
+                'fractal_features': 'False',
+                'location_features': 'False',
+                'rgrd_features': 'False',
+                'original_features': 'True',
+                'wavelet_features': 'False',
+                'log_features': 'False',
+            }
+    return overrides
+        
 
-   ## Lines below are used for shape / feature model only!
-    # config['SelectFeatGroup']['shape_features'] = 'False'
-    # config['SelectFeatGroup']['histogram_features'] = 'False'
-    # config['SelectFeatGroup']['orientation_features'] = 'False'
-    # config['SelectFeatGroup']['texture_Gabor_features'] = 'True'
-    # config['SelectFeatGroup']['texture_GLCM_features'] = 'True'
-    # config['SelectFeatGroup']['texture_GLDM_features'] = 'True'
-    # config['SelectFeatGroup']['texture_GLCMMS_features'] = 'True'
-    # config['SelectFeatGroup']['texture_GLRLM_features'] = 'True'
-    # config['SelectFeatGroup']['texture_GLSZM_features'] = 'True'
-    # config['SelectFeatGroup']['texture_GLDZM_features'] = 'True'
-    # config['SelectFeatGroup']['texture_NGTDM_features'] = 'True'
-    # config['SelectFeatGroup']['texture_NGLDM_features'] = 'True'
-    # config['SelectFeatGroup']['texture_LBP_features'] = 'True'
-    # config['SelectFeatGroup']['dicom_features'] = 'False'
-    # config['SelectFeatGroup']['vessel_features'] = 'False'
-    # config['SelectFeatGroup']['phase_features'] = 'False'
-    # config['SelectFeatGroup']['fractal_features'] = 'False'
-    # config['SelectFeatGroup']['location_features'] = 'False'
-    # config['SelectFeatGroup']['rgrd_features'] = 'False'
-    # config['SelectFeatGroup']['original_features'] = 'True'
-    # config['SelectFeatGroup']['wavelet_features'] = 'False'
-    # config['SelectFeatGroup']['log_features'] = 'False'
-
-    return config
 
 if __name__ == '__main__':
     # command line argument parsing
@@ -198,9 +213,17 @@ if __name__ == '__main__':
                         help='Image modality to run.')
     parser.add_argument('--version', type=str, default='v0',
                         help='Version of segmentation to run.')
-    parser.add_argument('--mode', type=int, default=0,
+    parser.add_argument('--mode', type=int,
                         help='Mode to control the inclusion of clinical features')
+    parser.add_argument('--label_type', type=str, default='Huvos',
+                        help='Huvos or WIR')
     args = parser.parse_args()
-    # Call the main function with the experiment name   
+    
+    # print parsed arguments
+    print(f"Experiment Name: {args.exp_name}")
+    print(f"Modality: {args.modality}")
+    print(f"Version: {args.version}")
+    print(f"Mode: {args.mode}")
+    print(f"Label Type: {args.label_type}") 
 
-    main(experiment_name=args.exp_name, modality=args.modality, version=args.version, mode=args.mode)
+    main(experiment_name=args.exp_name, modality=args.modality, version=args.version, mode=args.mode, type=args.label_type)
