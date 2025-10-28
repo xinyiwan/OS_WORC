@@ -1,113 +1,107 @@
-import os, glob
+import os
 import pandas as pd
 import logging
 from server_utils import test_ssh_connection, copy_with_rsync
+import subprocess
 
-IMAGE_RECORDS_DIR = '/exports/lkeb-hpc/xwan/osteosarcoma/preprocessing/modality/included_images_app.csv'
+IMAGE_RECORDS_DIR = '/exports/lkeb-hpc/xwan/osteosarcoma/preprocessing/dataloader/'
 DATA_DIR = '/projects/0/prjs1425/Osteosarcoma_WORC/exp_data'
-RECORDS = pd.read_csv(IMAGE_RECORDS_DIR)
 LOG_DIR = '/exports/lkeb-hpc/xwan/osteosarcoma/logs'
 
-DATA_STORAGE = '/exports/lkeb-hpc-data/XnatOsteosarcoma/os_data_tmp/os_data_tmp/reorg_DCM2NII/'
-SEG_DATA_STORAGE = '/exports/lkeb-hpc/xwan/osteosarcoma/OS_seg_resample'
-
 # Remote server configuration
-REMOTE_SERVER = 'snellius-lumc'  # Change this to your remote server
-REMOTE_USER = 'xwan'             # Change this to your username
-REMOTE_BASE_PATH = '/projects/0/prjs1425/Osteosarcoma_WORC/exp_data'  # Change this to your remote base path
-REMOTE_PORT = 22  # Change if using non-standard SSH port
+REMOTE_SERVER = 'snellius-lumc'
+REMOTE_USER = 'xwan'
+REMOTE_BASE_PATH = '/projects/0/prjs1425/Osteosarcoma_WORC/exp_data'
+REMOTE_PORT = 22
 
+def create_remote_directory(remote_path, server, user, port=22):
+    """Create directory on remote server if it doesn't exist."""
+    try:
+        # Extract directory from file path
+        remote_dir = os.path.dirname(remote_path)
+        
+        # Use ssh to create directory
+        cmd = ['ssh', '-p', str(port), f'{user}@{server}', f'mkdir -p {remote_dir}']
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        
+        if result.returncode == 0:
+            logging.info(f"Created remote directory: {remote_dir}")
+            return True
+        else:
+            logging.error(f"Failed to create remote directory {remote_dir}: {result.stderr}")
+            return False
+    except Exception as e:
+        logging.error(f"Error creating remote directory {remote_path}: {str(e)}")
+        return False
 
-# logging file
-logging.basicConfig(filename=f'{LOG_DIR}/data_download_shark2snellius.log', level=logging.INFO,
-                    format='%(asctime)s:%(levelname)s:%(message)s')
-
-
-# Create new pid_n column
-def create_pid_n(group):
+def download_data(modality='T1W', version='v0', transfer_method='rsync'):
     """
-    Create a new 'pid_n' to create images for each subject with multiple scans. 
-    The final format will be 'OS_0000001_01', 'OS_0000001_02', etc. 
+    Execute the data download from SHARK to Snellius using existing CSV with paths.
     """
-    # Sort by session and scan to ensure consistent ordering
-    group = group.sort_values(['session', 'scan'])
-    # Create index numbers starting from 01
-    indices = [f"{i+1:02d}" for i in range(len(group))]
-    group['pid_n'] = group['Subject'] + '_' + indices
-    return group
-
-
-def download_data(modality='T1W', transfer_method='rsync'):
-
-    """
-    Exacute the data download from SHARK.
-    """
+    # logging file
+    logging.basicConfig(filename=f'{LOG_DIR}/data_download_shark2snellius_{modality}.log', 
+                        level=logging.INFO,
+                        format='%(asctime)s:%(levelname)s:%(message)s')
 
     # Test SSH connection first
     if not test_ssh_connection(REMOTE_SERVER, REMOTE_USER, REMOTE_PORT):
         logging.error(f"Cannot connect to {REMOTE_SERVER}. Please check credentials and connection.")
         return
 
-    # Create directory if it doesn't exist @ Snellius
-    # if not os.path.exists(f'{DATA_DIR}/{modality}'):
-    #     os.makedirs(f'{DATA_DIR}/{modality}')
-    #     logging.info(f'Created directory: {DATA_DIR}/{modality}')
+    # Read the CSV file
+    records_path = os.path.join(IMAGE_RECORDS_DIR, f'{modality}_df.csv')
+    if not os.path.exists(records_path):
+        logging.error(f"Records file not found: {records_path}")
+        return
     
-    imgs = RECORDS[RECORDS['modality'] == modality]
-
-    # Apply the function to create 'pid_n'
-    imgs = imgs.groupby('Subject').apply(create_pid_n).reset_index(drop=True)
-    imgs = imgs.sort_values('pid_n').reset_index(drop=True)
-
-    # Reorder columns to have pid_n first
-    cols = imgs.columns.tolist()
-    cols = ['pid_n'] + [col for col in cols if col != 'pid_n']
-    imgs = imgs[cols]
+    records = pd.read_csv(records_path)
+    
+    # Filter only included records if you have that column
+    seg_column = f'seg_{version}_path'
+    if seg_column in records.columns:
+        records = records[records[seg_column].notna()]
+    else:
+        logging.error(f"Segmentation column {seg_column} not found in CSV")
+        return
+    
+    logging.info(f"Found {len(records)} records to process")
 
     successful_transfers = 0
     failed_transfers = 0
 
-    for idx, row in imgs.iterrows():
+    for idx, row in records.iterrows():
         pid = row['pid_n']
-        subject = row['Subject']
-        session = row['session']
-        scan = row['scan']
-
-        # create subject directory if it doesn't exist @ Snellius
-        # subject_dir = f'{DATA_DIR}/{modality}/{pid}'
-        # if not os.path.exists(subject_dir):
-        #     os.makedirs(subject_dir)
-        #     logging.info(f'Created directory: {subject_dir}')
         
-        # Find the image file 
-        file_pattern = os.path.join(DATA_STORAGE, subject, session, f"{scan}-*.nii.gz")
-        files = glob.glob(file_pattern)
-        if len(files) == 0:
-            logging.warning(f'No files found for pattern: {file_pattern}')
+        # Get image path directly from CSV
+        img_file = row['image_path']
+        if pd.isna(img_file) or not os.path.exists(img_file):
+            logging.warning(f"Image file not found: {img_file}")
+            failed_transfers += 1
             continue
-        elif len(files) > 1:
-            logging.warning(f'Multiple files found for pattern: {file_pattern}. Using the first one.')
-            continue
-        else:
-            logging.info(f'Image found following the pattern: {file_pattern}')
-            img_file = files[0]
         
-        # Find segmentation file
-        seg_file_pattern = os.path.join(SEG_DATA_STORAGE, subject, session, 'gau_aff', f"SEG_0_{scan}-*.nii.gz")
-        files = glob.glob(seg_file_pattern)
-        if len(files) == 0:
-            logging.warning(f'No files found for pattern: {file_pattern}')
+        # Get segmentation path based on version
+        seg_column = f'seg_{version}_path'
+        if seg_column not in records.columns:
+            logging.error(f"Segmentation column {seg_column} not found in CSV")
+            failed_transfers += 1
             continue
-        elif len(files) > 1:
-            logging.warning(f'Multiple files found for pattern: {file_pattern}. Using the first one.')
+            
+        seg_file = row[seg_column]
+        if pd.isna(seg_file) or not os.path.exists(seg_file):
+            logging.warning(f"Segmentation file not found: {seg_file}")
+            failed_transfers += 1
             continue
-        else:
-            logging.info(f'Seg found following the pattern: {file_pattern}')
-            seg_file = files[0]
 
         # Define remote paths
-        remote_img_path = os.path.join(REMOTE_BASE_PATH, modality, pid, 'image.nii.gz')
-        remote_seg_path = os.path.join(REMOTE_BASE_PATH, modality, pid, 'mask.nii.gz')
+        remote_dir = os.path.join(REMOTE_BASE_PATH, modality, version, pid)
+        remote_img_path = os.path.join(remote_dir, 'image.nii.gz')
+        remote_seg_path = os.path.join(remote_dir, 'mask.nii.gz')
+
+        # Create remote directory first
+        if not create_remote_directory(remote_img_path, REMOTE_SERVER, REMOTE_USER, REMOTE_PORT):
+            logging.error(f"Failed to create remote directory for {pid}")
+            failed_transfers += 1
+            continue
 
         # Copy files to remote server
         success = False
@@ -126,12 +120,21 @@ def download_data(modality='T1W', transfer_method='rsync'):
 
     # Summary
     logging.info(f"Transfer completed. Successful: {successful_transfers}, Failed: {failed_transfers}")
-    print(f"Transfer summary for {modality}:")
+    print(f"Transfer summary for {modality} (version {version}):")
     print(f"  Successful transfers: {successful_transfers}")
     print(f"  Failed transfers: {failed_transfers}")
     print(f"  Total attempted: {successful_transfers + failed_transfers}")
-        
 
 if __name__ == "__main__":
+    # download_data('T1W', version='v9')
+    # download_data('T1W', version='v0')
+    # download_data('T1W', version='v1')
 
-    download_data('T1W')
+    # download_data('T2W_FS', version='v0')
+    # download_data('T2W_FS', version='v1')
+    # download_data('T2W_FS', version='v9')
+
+
+    download_data('T1W_FS_C', version='v0')
+    download_data('T1W_FS_C', version='v1')
+    download_data('T1W_FS_C', version='v9')
