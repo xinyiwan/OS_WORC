@@ -1,4 +1,5 @@
 import os
+os.environ["NUMEXPR_MAX_THREADS"] = "192"  
 
 import sys
 import numpy as np
@@ -19,8 +20,6 @@ from WORC.statistics.compute_CI import compute_confidence_bootstrap
 from WORC.plotting.plot_estimator_performance import plot_estimator_performance, fit_thresholds, compute_statistics
 import json 
 
-
-os.environ["NUMEXPR_MAX_THREADS"] = "192"  
 
 def plot_estimator_performance_intermediate(prediction, label_data, label_type,
                                crossval_type=None, alpha=0.95,
@@ -730,23 +729,21 @@ def plot_estimator_performance_intermediate(prediction, label_data, label_type,
 
         return output
 
-def main(modality, version, mode):
+def main(exp_name, modality, version, use_WIR=False, save_dir='WORC_COM_OS_tmp'):
 
-    if mode == 0:
-        m_label = ''
-    elif mode == 1:
-        m_label = '_cli'
-    elif mode == 2:
-        m_label = '_only_cli'
+    if not 'wir' in exp_name:
+        output_json_dir = f'/projects/0/prjs1425/Osteosarcoma_WORC/res_analysis/{exp_name}'
+        prediction = f'/gpfs/work1/0/prjs1425/Osteosarcoma_WORC/{save_dir}/{exp_name}/classify/all/classification_0.hdf5'
+        label_data = f'/projects/0/prjs1425/Osteosarcoma_WORC/exp_data/{modality}/{version}/clinical_features_with_Huvos.csv'
+        label_type = ['Huvosnew']
     else:
-        m_label = 'error_mode'
-    output_json_dir = f'/projects/0/prjs1425/Osteosarcoma_WORC/res_analysis/{modality}_{version}{m_label}'
+        output_json_dir = f'/projects/0/prjs1425/Osteosarcoma_WORC/res_analysis/wir_{exp_name}'
+        prediction = f'/gpfs/work1/0/prjs1425/Osteosarcoma_WORC/{save_dir}/{exp_name}/classify/all/classification_0.hdf5'
+        label_data = f'/projects/0/prjs1425/Osteosarcoma_WORC/exp_data/WIR/{modality}/{version}/clinical_features_with_Huvos.csv'
+        label_type = ['WIR_label']
     os.makedirs(output_json_dir, exist_ok=True)
 
 
-    prediction = f'/gpfs/work1/0/prjs1425/Osteosarcoma_WORC/WORC_SUB_OS_tmp/{modality}_{version}/classify/all/classification_0.hdf5'
-    label_data = f'/projects/0/prjs1425/Osteosarcoma_WORC/exp_data/{modality}/{version}/clinical_features_with_Huvos.csv'
-    label_type = ['Huvosnew']
     output='scores' 
 
     y_truths, y_scores, y_predictions, pids =\
@@ -772,17 +769,18 @@ def main(modality, version, mode):
 if __name__ == '__main__':
     import argparse 
     parser = argparse.ArgumentParser(description='Run WORC for clinical features.')
-    parser.add_argument('--exp_name', type=str, default='test',
+    parser.add_argument('--exp_name', type=str, default='cli_only_T1W',
                         help='Name of the experiment to run.')
     parser.add_argument('--modality', type=str, default='T1W',
                         help='Image modality to run.')
     parser.add_argument('--version', type=str, default='v0',
                         help='Version of segmentation to run.')
-    parser.add_argument('--mode', type=int, default=0,
-                        help='Mode to control the inclusion of clinical features')
+    parser.add_argument('--save_dir', type=str, default='WORC_COM_OS_tmp',
+                        help='Directory where WORC results are stored.' )
+    
     args = parser.parse_args()
     # Call the main function with the experiment name   
 
-    main(modality=args.modality, version=args.version, mode=args.mode)
+    main(exp_name=args.exp_name, modality=args.modality, version=args.version, save_dir=args.save_dir)
 
     
