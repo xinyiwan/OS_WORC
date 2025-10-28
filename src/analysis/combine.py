@@ -4,6 +4,7 @@ from sklearn.metrics import roc_auc_score, accuracy_score, precision_score, reca
 from collections import defaultdict
 import argparse
 import os
+os.environ["NUMEXPR_MAX_THREADS"] = "192"  
 
 def combine_to_subject_level(y_score, y_truth, pids, method='average'):
     """
