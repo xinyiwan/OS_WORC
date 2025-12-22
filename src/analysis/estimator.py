@@ -731,16 +731,27 @@ def plot_estimator_performance_intermediate(prediction, label_data, label_type,
 
 def main(exp_name, modality, version, use_WIR=False, save_dir='WORC_COM_OS_tmp'):
 
-    if not 'wir' in exp_name:
+    if 'AG' in exp_name:
+        if 'CD' in exp_name:
+            loc = 'Children'
+        elif 'AYA' in exp_name:
+            loc = 'AYA'
+        elif 'OD' in exp_name:
+            loc = 'Older_adults'
         output_json_dir = f'/projects/0/prjs1425/Osteosarcoma_WORC/res_analysis/{exp_name}'
         prediction = f'/gpfs/work1/0/prjs1425/Osteosarcoma_WORC/{save_dir}/{exp_name}/classify/all/classification_0.hdf5'
-        label_data = f'/projects/0/prjs1425/Osteosarcoma_WORC/exp_data/{modality}/{version}/clinical_features_with_Huvos.csv'
+        label_data = f'/projects/0/prjs1425/Osteosarcoma_WORC/exp_data/{loc}/{modality}/{version}/clinical_features_with_Huvos.csv'
         label_type = ['Huvosnew']
-    else:
+    if 'wir' in exp_name:
         output_json_dir = f'/projects/0/prjs1425/Osteosarcoma_WORC/res_analysis/wir_{exp_name}'
         prediction = f'/gpfs/work1/0/prjs1425/Osteosarcoma_WORC/{save_dir}/{exp_name}/classify/all/classification_0.hdf5'
         label_data = f'/projects/0/prjs1425/Osteosarcoma_WORC/exp_data/WIR/{modality}/{version}/clinical_features_with_Huvos.csv'
         label_type = ['WIR_label']
+    else:
+        output_json_dir = f'/projects/0/prjs1425/Osteosarcoma_WORC/res_analysis/{exp_name}'
+        prediction = f'/gpfs/work1/0/prjs1425/Osteosarcoma_WORC/{save_dir}/{exp_name}/classify/all/classification_0.hdf5'
+        label_data = f'/projects/0/prjs1425/Osteosarcoma_WORC/exp_data/{modality}/{version}/clinical_features_with_Huvos.csv'
+        label_type = ['Huvosnew']
     os.makedirs(output_json_dir, exist_ok=True)
 
 
