@@ -31,12 +31,14 @@ def generate_clinical_features(data_path, level='image'):
     df['Age_Start'] = df['pid_n'].apply(lambda x: get_clinical_value(x, 'Age_Start', level=level))
     df['sex'] = df['pid_n'].apply(lambda x: get_clinical_value(x, 'sex', level=level))
     df['pres_sympt'] = df['pid_n'].apply(lambda x: get_clinical_value(x, 'pres_sympt', level=level))
-    df['path_fract'] = df['pid_n'].apply(lambda x: get_clinical_value(x, 'path_fract', level=level))
+    # df['path_fract'] = df['pid_n'].apply(lambda x: get_clinical_value(x, 'path_fract', level=level))
     df['location'] = df['pid_n'].apply(lambda x: get_clinical_value(x, 'Location_extremity_no_extremity', level=level))
     df['diagnosis'] = df['pid_n'].apply(lambda x: get_clinical_value(x, 'Diagnosis_high', level=level))
     df['metastasis'] = df['pid_n'].apply(lambda x: get_clinical_value(x, 'Distant_meta_pres', level=level))
     df['tumor_size'] = df['pid_n'].apply(lambda x: get_clinical_value(x, 'Size_primary_tumor', level=level))
-    df['NAC'] = df['pid_n'].apply(lambda x: get_clinical_value(x, 'CTX_pre_op_new', level=level))
+
+    # NAC info does not belong to clinical features
+    # df['NAC'] = df['pid_n'].apply(lambda x: get_clinical_value(x, 'CTX_pre_op_new', level=level))
 
     
     # save only features
@@ -300,16 +302,20 @@ def create_summary_distribution_csv(data_dir):
 if __name__ == "__main__":
     # modalities = ['T1W', 'T2W_FS', 'T1W_FS_C']
     # versions = ['0', '1', '9'] 
+    # level = 'image'
+    
+    
     modalities = ['dummy']
     versions = ['0']
+    level = 'subject'
 
     excel_file_path = f'/projects/0/prjs1425/Osteosarcoma_WORC/image_records/balance_datasplit/patient_splits.csv'
 
     for modality in modalities:
         for version in versions:
             data_path = f'/projects/0/prjs1425/Osteosarcoma_WORC/exp_data/{modality}/v{version}'
-            generate_clinical_features(data_path, level='subject')
-            modified_df, available_ids = modify_split(data_path, excel_file_path, level='subject')
+            generate_clinical_features(data_path, level=level)
+            modified_df, available_ids = modify_split(data_path, excel_file_path, level=level)
             check_label_distribution(data_path)
     
     # Create summary across all runs
