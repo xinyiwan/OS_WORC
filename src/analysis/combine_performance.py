@@ -25,6 +25,25 @@ def get_performance(json_path):
     except Exception as e:
         print(f"Error reading {json_path}: {e}")
         return {}
+def get_combined_performance(exp_name, method='majority'):
+    exp_name = exp_name.replace('WORC_', '')
+    combined_json_path = f'/projects/0/prjs1425/Osteosarcoma_WORC/res_analysis/{exp_name}/subject_level_performance_{method}.json'
+    try:
+        data = pd.read_json(combined_json_path)
+        statistics = data['Statistics']
+        
+        performance_metrics = {}
+        for key, value in statistics.items():
+            if key.endswith('95%:') and pd.notna(value):
+                metric_name = key.replace(' 95%:', '')
+                formatted_value = format_performance_value(value)
+                performance_metrics[metric_name] = formatted_value
+        
+        return performance_metrics      
+    except Exception as e:
+        print(f"Error reading {combined_json_path}: {e}")
+        return {}
+    
 
 def get_numbers(json_path):
     try:
@@ -89,24 +108,33 @@ if __name__ == "__main__":
         json_path = f'/projects/0/prjs1425/Osteosarcoma_WORC/WORC_COM_OS_res/{exp_name}/performance_all_0.json'
         
         performance = get_performance(json_path)
+        majority_performance = get_combined_performance(exp_name, method = 'majority')
+        mean_performance = get_combined_performance(exp_name, method = 'average')
+        max_prob_performance = get_combined_performance(exp_name, method = 'max_prob')
         numbers = get_numbers(json_path)
         
-        if performance:
-            performance_data[exp_name] = {
-                'AUC': performance.get('AUC', ''),
-                'Accuracy': performance.get('Accuracy', ''),
-                'Sensitivity': performance.get('Sensitivity', ''),
-                'Specificity': performance.get('Specificity', ''),
-                'Numbers': numbers
-            }
-            
-            print(f'Experiment: {exp_name} Performance:')
-            print(f'  AUC: {performance.get("AUC", "N/A")}')
-            print(f'  Accuracy: {performance.get("Accuracy", "N/A")}')
-            print(f'  Sensitivity: {performance.get("Sensitivity", "N/A")}')
-            print(f'  Specificity: {performance.get("Specificity", "N/A")}')
-        else:
-            print(f'Experiment: {exp_name} - No performance data found')
+        def add_performance_data(exp_name, performance, numbers):
+            if performance:
+                performance_data[exp_name] = {
+                    'AUC': performance.get('AUC', ''),
+                    'Accuracy': performance.get('Accuracy', ''),
+                    'Sensitivity': performance.get('Sensitivity', ''),
+                    'Specificity': performance.get('Specificity', ''),
+                    'Numbers': numbers
+                }
+                
+                print(f'Experiment: {exp_name} Performance:')
+                print(f'  AUC: {performance.get("AUC", "N/A")}')
+                print(f'  Accuracy: {performance.get("Accuracy", "N/A")}')
+                print(f'  Sensitivity: {performance.get("Sensitivity", "N/A")}')
+                print(f'  Specificity: {performance.get("Specificity", "N/A")}')
+            else:
+                print(f'Experiment: {exp_name} - No performance data found')
+        
+        add_performance_data(exp_name, performance, numbers)
+        add_performance_data(f'{exp_name}_majority', majority_performance, numbers)
+        add_performance_data(f'{exp_name}_mean', mean_performance, numbers)
+        add_performance_data(f'{exp_name}_max_prob', max_prob_performance, numbers)        
     
     # Create the final table
     metrics = ['AUC', 'Accuracy', 'Sensitivity', 'Specificity']
