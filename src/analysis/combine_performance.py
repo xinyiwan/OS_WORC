@@ -59,13 +59,13 @@ def format_performance_value(value):
     return value_str
 
 if __name__ == "__main__":
-    exp_names = os.listdir('/projects/0/prjs1425/Osteosarcoma_WORC/WORC_COM_OS_res')
+    exp_names = os.listdir('/exports/lkeb-hpc/xwan/osteosarcoma/OS_res/results')
     
     # Create a dictionary to store all performance data
     performance_data = {}
     
     for exp_name in exp_names:
-        json_path = f'/projects/0/prjs1425/Osteosarcoma_WORC/WORC_COM_OS_res/{exp_name}/performance_all_0.json'
+        json_path = f'/exports/lkeb-hpc/xwan/osteosarcoma/OS_res/results/{exp_name}/performance_all_0.json'
         performance = get_performance(json_path)
         
         if performance:
@@ -98,7 +98,7 @@ if __name__ == "__main__":
     df = pd.DataFrame(table_data)
     
     # Save to CSV
-    df.to_csv('performance_table.csv', index=False)
+    df.to_csv('/exports/lkeb-hpc/xwan/osteosarcoma/OS_res/performance_table.csv', index=False)
     print(f"\nSaved performance table to 'performance_table.csv'")
     
     # Also create a more formatted version for display
