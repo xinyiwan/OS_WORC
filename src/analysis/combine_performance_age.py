@@ -93,7 +93,7 @@ def format_performance_value(value):
     return value_str
 
 if __name__ == "__main__":
-    exp_names = os.listdir('/exports/lkeb-hpc/xwan/osteosarcoma/OS_res/results')
+    exp_names = os.listdir('/projects/0/prjs1425/OS_res/results')
     
     included_exps = []
 
@@ -104,12 +104,13 @@ if __name__ == "__main__":
     # Create a dictionary to store all performance data
     performance_data = {}
     
-    for exp_name in exp_names:
-        json_path = f'/exports/lkeb-hpc/xwan/osteosarcoma/OS_res/results/{exp_name}/performance_all_0.json'
+    for exp_name in included_exps:
+        json_path = f'/projects/0/prjs1425/OS_res/results/{exp_name}/performance_all_0.json'
+        
         performance = get_performance(json_path)
-        majority_performance = get_combined_performance(exp_name, method = 'majority')
-        mean_performance = get_combined_performance(exp_name, method = 'average')
-        max_prob_performance = get_combined_performance(exp_name, method = 'max_prob')
+        # majority_performance = get_combined_performance(exp_name, method = 'majority')
+        # mean_performance = get_combined_performance(exp_name, method = 'average')
+        # max_prob_performance = get_combined_performance(exp_name, method = 'max_prob')
         numbers = get_numbers(json_path)
         
         def add_performance_data(exp_name, performance, numbers):
@@ -131,9 +132,9 @@ if __name__ == "__main__":
                 print(f'Experiment: {exp_name} - No performance data found')
         
         add_performance_data(exp_name, performance, numbers)
-        add_performance_data(f'{exp_name}_majority', majority_performance, numbers)
-        add_performance_data(f'{exp_name}_mean', mean_performance, numbers)
-        add_performance_data(f'{exp_name}_max_prob', max_prob_performance, numbers)        
+        # add_performance_data(f'{exp_name}_majority', majority_performance, numbers)
+        # add_performance_data(f'{exp_name}_mean', mean_performance, numbers)
+        # add_performance_data(f'{exp_name}_max_prob', max_prob_performance, numbers)        
     
     # Create the final table
     metrics = ['AUC', 'Accuracy', 'Sensitivity', 'Specificity']
@@ -150,7 +151,7 @@ if __name__ == "__main__":
     df = pd.DataFrame(table_data)
     
     # Save to CSV
-    df.to_csv('/exports/lkeb-hpc/xwan/osteosarcoma/OS_res/performance_table.csv', index=False)
+    df.to_csv('/projects/0/prjs1425/OS_res/all_performance_table_age.csv', index=False)
     print(f"\nSaved performance table to 'performance_table.csv'")
     
     # Also create a more formatted version for display

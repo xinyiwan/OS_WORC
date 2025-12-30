@@ -10,10 +10,10 @@ import pandas as pd
 import json
 import fastr
 import glob
-from helper import get_imgs_by_agegroup, create_overfit_splits
+from helper import get_imgs_by_agegroup, create_overfit_splits, get_imgs_by_mrigroup
 
 # Define the folder this script is in, so we can easily find the example data
-script_path = '/gpfs/work1/0/prjs1425/Osteosarcoma_WORC/WORC_COM_OS_tmp/'
+script_path = '/scratch-shared/xwan/Osteosarcoma/tmp'
 
 # Determine whether you would like to use WORC for binary_classification,
 modus = 'binary_classification'
@@ -40,8 +40,13 @@ def main(experiment_name, modality, version, mode, type, overfit=0):
         imagedatadir = exp_data_dir
         label_file = os.path.join(exp_data_dir, 'clinical_features_with_Huvos.csv')
         label_name = ['Huvosnew']
-        
-
+    
+    if (type == 'T1W+T1W_FS_C') or (type == 'T1W+T2W_FS') or (type =='T2W_FS+T1W_FS_C') or (type == 'T1W+T1W_FS_C+T2W_FS'):
+        modalities = type.split('+')        
+        images_dict, segs_dict, exp_data_dir = get_imgs_by_mrigroup(modalities=modalities, version=version, exp_name=type)
+        imagedatadir = exp_data_dir
+        label_file = os.path.join(exp_data_dir, 'clinical_features_with_Huvos.csv')
+        label_name = ['Huvosnew']
         
 
     image_file_name = 'image.nii.gz'
@@ -60,7 +65,8 @@ def main(experiment_name, modality, version, mode, type, overfit=0):
     experiment = SimpleWORC(experiment_name)
 
     # Add dummy images from the directory   
-    if (type == 'Children') or (type == 'AYA') or (type == 'Older_adults'):
+    if (type == 'Children') or (type == 'AYA') or (type == 'Older_adults') \
+        or (type == 'T1W+T1W_FS_C') or (type == 'T1W+T2W_FS') or (type =='T2W_FS+T1W_FS_C') or (type == 'T1W+T1W_FS_C+T2W_FS'):
         experiment._images_train.append(images_dict)
         experiment._segmentations_train.append(segs_dict) 
     else:
