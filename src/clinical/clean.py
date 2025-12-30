@@ -56,7 +56,7 @@ if __name__ == "__main__":
                  'Age_Start', 'sex', 'pres_sympt', 
                  'Location_extremity_no_extremity', 
                  'Diagnosis_high',
-                 'path_fract', 
+                #  'path_fract',  should be removed since it overlap with symptons
                  'Distant_meta_pres',
                  'Size_primary_tumor', 
                  'CTX_pre_op_new',
@@ -92,4 +92,22 @@ if __name__ == "__main__":
     input.to_csv(os.path.join('/exports/lkeb-hpc/xwan/osteosarcoma/preprocessing/clinical_analysis','WORC_clinical_input.csv'), index=False)
 
 
+    # Check simple ML for different age group
+    data_C = data[data['Age_Start'] < 16]
+    data_AYA = data[(data['Age_Start'] >= 16) & (data['Age_Start'] < 40)]
+    data_OD = data[data['Age_Start'] >= 40]
+
+    def simpleML(data, exp_name):
+        label = data['Huvos_num']
+        input = pd.DataFrame()
+        input['Age_Start'] = data['Age_Start']
+        for col in variables:
+            if col in cat[:-1]:
+                input[col] = df_test[col + '_num']
+        
+        run_simple_ML(input, label, res_dir, exp_name=exp_name)
+    
+    simpleML(data_C, 'Children')
+    simpleML(data_AYA, 'AYA')
+    simpleML(data_OD, 'OD')
 
