@@ -10,7 +10,7 @@ import pandas as pd
 import json
 import fastr
 import glob
-
+from helper import get_imgs_by_agegroup, create_overfit_splits
 
 # Define the folder this script is in, so we can easily find the example data
 script_path = '/gpfs/work1/0/prjs1425/Osteosarcoma_WORC/WORC_COM_OS_tmp/'
@@ -18,7 +18,7 @@ script_path = '/gpfs/work1/0/prjs1425/Osteosarcoma_WORC/WORC_COM_OS_tmp/'
 # Determine whether you would like to use WORC for binary_classification,
 modus = 'binary_classification'
 
-def main(experiment_name, modality, version, mode, type):
+def main(experiment_name, modality, version, mode, type, overfit=0):
     """Execute WORC Tutorial experiment."""
     print(f"Running in folder: {script_path}.")
     # ---------------------------------------------------------------------------
@@ -34,6 +34,14 @@ def main(experiment_name, modality, version, mode, type):
         imagedatadir = f'/projects/0/prjs1425/Osteosarcoma_WORC/exp_data/WIR/{modality}/{version}'
         label_file = f'/projects/0/prjs1425/Osteosarcoma_WORC/exp_data/WIR/{modality}/{version}/clinical_features_with_{type}.csv'
         label_name = ['WIR_label']
+
+    if (type == 'Children') or (type == 'AYA') or (type == 'Older_adults'):
+        images_dict, segs_dict, exp_data_dir = get_imgs_by_agegroup(modality=modality, version=version, age_group=type, exp_name=type)
+        imagedatadir = exp_data_dir
+        label_file = os.path.join(exp_data_dir, 'clinical_features_with_Huvos.csv')
+        label_name = ['Huvosnew']
+        
+
         
 
     image_file_name = 'image.nii.gz'
@@ -50,23 +58,31 @@ def main(experiment_name, modality, version, mode, type):
     # The actual experiment
     # ---------------------------------------------------------------------------
     experiment = SimpleWORC(experiment_name)
-    # Add dummy images from the directory    
-    experiment.images_from_this_directory(imagedatadir,
-                                          image_file_name=image_file_name,
-                                          is_training=True)
-    
-    experiment.segmentations_from_this_directory(imagedatadir,
-                                                 segmentation_file_name=segmentation_file_name,
-                                                 is_training=True)
+
+    # Add dummy images from the directory   
+    if (type == 'Children') or (type == 'AYA') or (type == 'Older_adults'):
+        experiment._images_train.append(images_dict)
+        experiment._segmentations_train.append(segs_dict) 
+    else:
+        experiment.images_from_this_directory(imagedatadir,
+                                            image_file_name=image_file_name,
+                                            is_training=True)
+        
+        experiment.segmentations_from_this_directory(imagedatadir,
+                                                    segmentation_file_name=segmentation_file_name,
+                                                    is_training=True)
     
     # Add the clinical features as metadata
-    if type == 'Huvos':
-        experiment.semantics_from_this_file(os.path.join(imagedatadir, 'clinical_features.csv'))
+    experiment.semantics_from_this_file(os.path.join(imagedatadir, 'clinical_features.csv'))
     experiment.labels_from_this_file(label_file)
     experiment.predict_labels(label_name)
 
     # Set fixed splits
-    experiment.set_fixed_splits(os.path.join(imagedatadir,'patient_splits.csv'))
+    if overfit == 1:
+        create_overfit_splits(imagedatadir, n_splits=20)
+        experiment.set_fixed_splits(os.path.join(imagedatadir,'patient_overfit_splits.csv'))
+    else:
+        experiment.set_fixed_splits(os.path.join(imagedatadir,'patient_splits.csv'))
 
     experiment.set_image_types(['MRI'])
     experiment.binary_classification(coarse=coarse)
@@ -216,7 +232,9 @@ if __name__ == '__main__':
     parser.add_argument('--mode', type=int,
                         help='Mode to control the inclusion of clinical features')
     parser.add_argument('--label_type', type=str, default='Huvos',
-                        help='Huvos or WIR')
+                        help='Huvos, WIR, Children, AYA, Older_adults')
+    parser.add_argument('--overfit', type=int, default=0,
+                        help='Whether to create overfit splits (1) or not (0)')
     args = parser.parse_args()
     
     # print parsed arguments
@@ -225,5 +243,7 @@ if __name__ == '__main__':
     print(f"Version: {args.version}")
     print(f"Mode: {args.mode}")
     print(f"Label Type: {args.label_type}") 
+    print(f"Overfit: {args.overfit}") 
 
-    main(experiment_name=args.exp_name, modality=args.modality, version=args.version, mode=args.mode, type=args.label_type)
+    main(experiment_name=args.exp_name, modality=args.modality, version=args.version, 
+            mode=args.mode, type=args.label_type, overfit=args.overfit)

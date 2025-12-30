@@ -9,7 +9,7 @@ dummy_mask = '/projects/0/prjs1425/Osteosarcoma_WORC/dummy_data/mask.nii.gz'
 if __name__ == '__main__':
     
     for pid in pids:
-        patient_dir = f'/projects/0/prjs1425/Osteosarcoma_WORC/exp_data/dummy_data/{pid}'
+        patient_dir = f'/projects/0/prjs1425/Osteosarcoma_WORC/exp_data/dummy/v0/{pid}'
         f_image = f'{patient_dir}/image.nii.gz'
         f_mask = f'{patient_dir}/mask.nii.gz'
         

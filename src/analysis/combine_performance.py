@@ -26,6 +26,21 @@ def get_performance(json_path):
         print(f"Error reading {json_path}: {e}")
         return {}
 
+def get_numbers(json_path):
+    try:
+        # Read the JSON file
+        features_path = os.path.join(os.path.dirname(json_path), 'Features')
+        
+        # get number of files under features_path
+        feature_files = [f for f in os.listdir(features_path) if os.path.isfile(os.path.join(features_path, f))]
+        num_features = int(len(feature_files) / 4)
+        
+        return num_features
+    
+    except Exception as e:
+        print(f"Error reading {json_path}: {e}")
+        return {}
+
 def format_performance_value(value):
     """Format performance value to extract numbers and format to 3 decimal places"""
     if pd.isna(value):
@@ -61,19 +76,27 @@ def format_performance_value(value):
 if __name__ == "__main__":
     exp_names = os.listdir('/exports/lkeb-hpc/xwan/osteosarcoma/OS_res/results')
     
+    included_exps = []
+
+    # conditions 
+    for exp in exp_names:
+        # if 'cli' in exp or 'AG' in exp:
+        included_exps.append(exp)
     # Create a dictionary to store all performance data
     performance_data = {}
     
     for exp_name in exp_names:
         json_path = f'/exports/lkeb-hpc/xwan/osteosarcoma/OS_res/results/{exp_name}/performance_all_0.json'
         performance = get_performance(json_path)
+        numbers = get_numbers(json_path)
         
         if performance:
             performance_data[exp_name] = {
                 'AUC': performance.get('AUC', ''),
                 'Accuracy': performance.get('Accuracy', ''),
                 'Sensitivity': performance.get('Sensitivity', ''),
-                'Specificity': performance.get('Specificity', '')
+                'Specificity': performance.get('Specificity', ''),
+                'Numbers': numbers
             }
             
             print(f'Experiment: {exp_name} Performance:')
@@ -92,6 +115,7 @@ if __name__ == "__main__":
         row_data = {'Experiment': exp_name}
         for metric in metrics:
             row_data[metric] = performance_data[exp_name].get(metric, '')
+        row_data['Numbers'] = performance_data[exp_name].get('Numbers', 0)
         table_data.append(row_data)
     
     # Create DataFrame and save to CSV
