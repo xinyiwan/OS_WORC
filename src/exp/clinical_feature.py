@@ -53,6 +53,46 @@ def generate_clinical_features(data_path, level='image'):
         # save features with ground truth Huvos
         df.to_csv(f'{data_path}/clinical_features_with_Huvos.csv', index=False)
 
+def generate_clinical_features_bylist(pid_list, save_path, level='subject'):
+    """
+    Generate a clinical features CSV file from the provided clinical data CSV.
+    
+    Parameters:
+    pid_list (List): List of pids.
+    """
+
+    df = pd.DataFrame()
+    
+    # Get list of subject directories
+    df['pid_n'] = sorted(set(pid_list))
+
+
+    # Map clinical data safely
+    df['Age_Start'] = df['pid_n'].apply(lambda x: get_clinical_value(x, 'Age_Start', level=level))
+    df['sex'] = df['pid_n'].apply(lambda x: get_clinical_value(x, 'sex', level=level))
+    df['pres_sympt'] = df['pid_n'].apply(lambda x: get_clinical_value(x, 'pres_sympt', level=level))
+    # df['path_fract'] = df['pid_n'].apply(lambda x: get_clinical_value(x, 'path_fract', level=level))
+    df['location'] = df['pid_n'].apply(lambda x: get_clinical_value(x, 'Location_extremity_no_extremity', level=level))
+    df['diagnosis'] = df['pid_n'].apply(lambda x: get_clinical_value(x, 'Diagnosis_high', level=level))
+    df['metastasis'] = df['pid_n'].apply(lambda x: get_clinical_value(x, 'Distant_meta_pres', level=level))
+    df['tumor_size'] = df['pid_n'].apply(lambda x: get_clinical_value(x, 'Size_primary_tumor', level=level))
+
+    # NAC info does not belong to clinical features
+    # df['NAC'] = df['pid_n'].apply(lambda x: get_clinical_value(x, 'CTX_pre_op_new', level=level))
+
+    
+    # save only features
+    df.rename(columns={'pid_n': 'Patient'}, inplace=True)
+    df.to_csv(f'{save_path}/clinical_features.csv', index=False)
+
+    if 'WIR' in save_path:
+        df['WIR_label'] = df['Patient'].apply(lambda x: get_WIR_label(x))
+        df.to_csv(f'{save_path}/clinical_features_with_WIR.csv', index=False)
+    else:
+        df['Huvosnew'] = df['Patient'].apply(lambda x: get_clinical_value(x, 'Huvosnew', level=level))
+        # save features with ground truth Huvos
+        df.to_csv(f'{save_path}/clinical_features_with_Huvos.csv', index=False)
+
 
 
 def get_clinical_value(pid_n, column_name, level='image'):
@@ -202,6 +242,97 @@ def modify_split(data_path, excel_file_path, level='image'):
     print(f"DataFrame shape: {modified_df.shape}")
     
     return modified_df, available_ids
+
+def modify_split_bypids(pid_list, excel_file_path, save_path, level='subject'):
+    """
+    Modify splits based on available subject/image directories in data_path
+    
+    Parameters:
+    - pid_list: Patient list
+    - excel_file_path: path to the existing Excel file with splits
+    - level: 'subject' or 'image'
+    """
+    
+    # Get list and level
+    id_type = "Subject"
+    available_ids = set(pid_list)
+
+    
+    print(f"Available {id_type} IDs: {len(available_ids)}")
+    
+    # Read the existing Excel file
+    df = pd.read_csv(excel_file_path)
+    
+    # Create a modified dataframe
+    modified_data = {}
+    
+    # First pass: find the maximum length needed for any column
+    max_needed_length = 0
+    
+    for column in df.columns:
+        original_ids = df[column].dropna().tolist()  # Remove empty cells
+        
+        if level == 'subject':
+            # Direct match for subject level
+            available_in_column = [pid for pid in original_ids if pid in available_ids]
+        else:  # image level
+            # For image level, expand each subject ID to all its images
+            available_in_column = []
+            for subject_id in original_ids:
+                # Find all images that belong to this subject
+                matching_images = [img_id for img_id in available_ids 
+                                 if img_id.startswith(subject_id + '_')]
+                if matching_images:
+                    available_in_column.extend(sorted(matching_images))
+        
+        # Update the maximum length needed
+        max_needed_length = max(max_needed_length, len(available_in_column))
+    
+    print(f"Maximum column length needed: {max_needed_length}")
+    
+    # Second pass: build the columns with consistent length
+    for column in df.columns:
+        original_ids = df[column].dropna().tolist()  # Remove empty cells
+        
+        if level == 'subject':
+            # Direct match for subject level
+            available_in_column = [pid for pid in original_ids if pid in available_ids]
+            missing_in_column = [pid for pid in original_ids if pid not in available_ids]
+        else:  # image level
+            # For image level, expand each subject ID to all its images
+            available_in_column = []
+            missing_in_column = []
+            
+            for subject_id in original_ids:
+                # Find all images that belong to this subject
+                matching_images = [img_id for img_id in available_ids 
+                                 if img_id.startswith(subject_id + '_')]
+                if matching_images:
+                    available_in_column.extend(sorted(matching_images))
+                else:
+                    missing_in_column.append(subject_id)
+        
+        print(f"\nColumn: {column}")
+        print(f"  Original: {len(original_ids)} {id_type.lower()} IDs")
+        print(f"  Available: {len(available_in_column)} {id_type.lower()} IDs")
+        print(f"  Missing: {len(missing_in_column)} {id_type.lower()} IDs")
+        if missing_in_column and len(missing_in_column) <= 10:  # Only print if not too many
+            print(f"  Missing IDs: {missing_in_column}")
+        
+        # Pad with empty strings to match the maximum length needed
+        modified_data[column] = available_in_column + [''] * (max_needed_length - len(available_in_column))
+    
+    # Create new DataFrame
+    modified_df = pd.DataFrame(modified_data)
+    
+    # Save the modified Excel file
+    output_file = os.path.join(save_path, 'patient_splits.csv')
+    modified_df.to_csv(output_file, index=False)
+    
+    print(f"\nModified split file saved as: {output_file}")
+    print(f"DataFrame shape: {modified_df.shape}")
+    
+    return modified_df, available_ids
     
 def check_label_distribution(data_path, iter=20):
     label_type = 'Huvos' if not 'WIR' in data_path else 'WIR' if 'WIR' in data_path else 'Unknown'
@@ -300,14 +431,14 @@ def create_summary_distribution_csv(data_dir):
 
 # Add this call at the end of your main block
 if __name__ == "__main__":
-    # modalities = ['T1W', 'T2W_FS', 'T1W_FS_C']
-    # versions = ['0', '1', '9'] 
-    # level = 'image'
-    
-    
-    modalities = ['dummy']
-    versions = ['0']
+    modalities = ['T1W', 'T2W_FS', 'T1W_FS_C']
+    versions = ['0', '1', '9'] 
     level = 'subject'
+    
+    
+    # modalities = ['dummy']
+    # versions = ['0']
+    # level = 'subject'
 
     excel_file_path = f'/projects/0/prjs1425/Osteosarcoma_WORC/image_records/balance_datasplit/patient_splits.csv'
 
