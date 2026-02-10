@@ -10,7 +10,7 @@ import pandas as pd
 import json
 import fastr
 import glob
-from helper import get_imgs_by_agegroup, create_overfit_splits, get_imgs_by_mrigroup
+from helper import get_imgs_by_agegroup, create_overfit_splits, get_imgs_by_mrigroup, get_imgs_by_subtype
 
 # Define the folder this script is in, so we can easily find the example data
 script_path = '/scratch-shared/xwan/Osteosarcoma/tmp'
@@ -47,6 +47,9 @@ def main(experiment_name, modality, version, mode, type, overfit=0):
         imagedatadir = exp_data_dir
         label_file = os.path.join(exp_data_dir, 'clinical_features_with_Huvos.csv')
         label_name = ['Huvosnew']
+    
+    if type == 'Conventional_OS':
+
         
 
     image_file_name = 'image.nii.gz'

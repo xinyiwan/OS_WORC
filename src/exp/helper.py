@@ -213,6 +213,10 @@ def get_imgs_by_agegroup(modality, version, age_group, exp_name):
     
     return images_dict, segs_dict, exp_data_dir
 
+def get_imgs_by_subtype(modality, version, exp_name):
+    return
+
+
 def get_imgs_by_mrigroup(modalities, version, exp_name):
     """
     modalities: List, e.g., ['T1W', 'T1W_FS_C']

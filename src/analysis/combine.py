@@ -182,7 +182,7 @@ if __name__ == "__main__":
     
     argparser = argparse.ArgumentParser(description="Evaluate subject-level performance metrics with confidence intervals.")
     argparser.add_argument('--input_json', type=str, 
-                           default='/projects/0/prjs1425/Osteosarcoma_WORC/res_analysis/T1W_v0/results.json',
+                           default='/projects/0/prjs1425/Osteosarcoma_WORC/res_analysis/cli_only_T1W_v0/results.json',
                            help='Path to the input JSON file containing y_score, y_truth, and pids.')
     argparser.add_argument('--method', type=str, choices=['majority', 'average', 'max_prob'], default='majority',
                            help='Method to combine image-level predictions to subject level.')
