@@ -207,13 +207,17 @@ def main():
     variables = ['Age_Start', 'sex', 'pres_sympt', 
                  'Location_extremity_no_extremity', 
                  'Diagnosis_high',
-                 'path_fract', 
+                #  'path_fract', 
                  'Distant_meta_pres',
                  'Size_primary_tumor', 
                  'CTX_pre_op_new',
                  'Huvos']
         
     data = included_df[variables]
+
+    # Combine ‘<1 MAP or < 2AP’ with ‘1 MAP or 2 AP’. 
+    data['CTX_pre_op_new'] = data['CTX_pre_op_new'].replace({'<1 MAP or <2 AP': '<=1 MAP or <=2 AP'})
+    data['CTX_pre_op_new'] = data['CTX_pre_op_new'].replace({'1 MAP or 2 AP': '<=1 MAP or <=2 AP'})
 
     # Generate summary table by age
     summary_table_age = generate_summary_table_by_age(data, variables)

@@ -13,7 +13,7 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 import os
 
-def run_simple_ML(data, label, result_path):
+def run_simple_ML(data, label, result_path, exp_name='scores'):
     # List of classifiers and their names
     names = [
         "Nearest Neighbors",
@@ -64,5 +64,5 @@ def run_simple_ML(data, label, result_path):
 
     # print average score
     print(f"Average score across classifiers: {df['score'].mean()}")
-    df.to_csv(os.path.join(result_path, 'scores.csv'), index=False)
+    df.to_csv(os.path.join(result_path, f'{exp_name}.csv'), index=False)
 
