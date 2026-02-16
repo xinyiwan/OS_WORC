@@ -194,12 +194,19 @@ def plot_segs(modality, patient_id, output_dir='output_visualizations'):
     for version, seg_data in segmentations.items():
         seg_slice = get_slice(seg_data, slice_axis, slice_idx)
 
-        # Plot contour
+        # Plot contour with label
         contours = ax.contour(seg_slice.T, levels=[0.5], colors=version_colors[version],
                              linewidths=2, origin='lower')
 
-        # Add label
-        contours.collections[0].set_label(version)
+        # Add label (compatible with newer matplotlib versions)
+        if hasattr(contours, 'collections') and len(contours.collections) > 0:
+            contours.collections[0].set_label(version)
+        elif hasattr(contours, 'legend_elements'):
+            # For newer matplotlib, use a manual legend entry
+            ax.plot([], [], color=version_colors[version], linewidth=2, label=version)
+        else:
+            # Fallback: create a dummy plot for legend
+            ax.plot([], [], color=version_colors[version], linewidth=2, label=version)
 
     # Add legend
     ax.legend(loc='upper right', fontsize=12)
