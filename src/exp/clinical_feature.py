@@ -3,6 +3,7 @@ import os
 from collections import Counter
 
 CLINICAL_INFO = '/projects/0/prjs1425/Osteosarcoma_WORC/image_records/WORC_clinical_input.csv'
+
 clinical_data = pd.read_csv(CLINICAL_INFO)
 WIRC_data = pd.read_csv('/projects/0/prjs1425/Osteosarcoma_WORC/image_records/WIR_patient_mapping.csv')
 
