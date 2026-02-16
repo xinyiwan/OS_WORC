@@ -4,8 +4,12 @@ import shutil
 from collections import Counter
 from clinical_feature import generate_clinical_features_bylist, modify_split_bypids
 CLINI_INFO = '/projects/0/prjs1425/Osteosarcoma_WORC/image_records/WORC_clinical_input.csv'
+# include location information
+CLINI_INFO_LOC = '/projects/0/prjs1425/Osteosarcoma_WORC/image_records/WORC_clinical_input_loc.csv'
+
 DEFAULT_SPLITS = f'/projects/0/prjs1425/Osteosarcoma_WORC/image_records/balance_datasplit/patient_splits.csv'
 DATA_C = pd.read_csv(CLINI_INFO)
+DATA_C_LOC = pd.read_csv(CLINI_INFO_LOC)
 
 def get_imgs_by_agegroup(modality, version, age_group, exp_name):
     """
@@ -213,21 +217,20 @@ def get_imgs_by_agegroup(modality, version, age_group, exp_name):
     
     return images_dict, segs_dict, exp_data_dir
 
-def get_imgs_by_subtype(modality, version, exp_name, subtype='high'):
+def get_imgs_by_subtype(modality, version, exp_name, subtype, col_name='Diagnosis_high'):
     """
     Filter images by diagnosis subtype.
-    subtype = 'high': Diagnosis_high = 1 (high-grade osteosarcoma)
-    subtype = 'low': Diagnosis_high = 0 (low-grade osteosarcoma)
+    subtype = 'conventional': Diagnosis_high = 1 (conventional osteosarcoma)
     """
     # Filter patients based on Diagnosis_high column
-    if subtype == 'high':
-        included_pids = DATA_C[DATA_C['Diagnosis_high'] == 1]['Patient'].tolist()
-    elif subtype == 'low':
-        included_pids = DATA_C[DATA_C['Diagnosis_high'] == 0]['Patient'].tolist()
+    if subtype == 'conventional':
+        included_pids = DATA_C[DATA_C[col_name] == 1]['Patient'].tolist()
+    elif subtype == 'loc_prim_code':
+        included_pids = DATA_C_LOC[DATA_C_LOC[col_name] == 2]['Patient'].tolist()
     else:
-        raise ValueError(f"Invalid subtype: {subtype}. Must be 'high' or 'low'")
+        raise ValueError(f"Invalid subtype: {subtype}. Must be 'conventional' or 'loc_prim_code' for now")
 
-    print(f"Found {len(included_pids)} patients with Diagnosis_high = {1 if subtype == 'high' else 0}")
+    print(f"Found {len(included_pids)} patients with {col_name} = {1 if subtype == 'high' else 0}")
 
     exp_data_dir = os.path.join('/projects/0/prjs1425/Osteosarcoma_WORC/exp_data', exp_name, modality, version)
     os.makedirs(exp_data_dir, exist_ok=True)
@@ -235,7 +238,7 @@ def get_imgs_by_subtype(modality, version, exp_name, subtype='high'):
     image_file_name = 'image.nii.gz'
     segmentation_file_name = 'mask.nii.gz'
 
-    imagedatadir = f'/projects/0/prjs1425/Osteosarcoma_WORC/exp_data/{modality}/{version}'
+    imagedatadir = f'/projects/0/prjs1425/Osteosarcoma_WORC/exp_data/{modality}/{version}/'
     images = glob.glob(os.path.join(imagedatadir, "*", image_file_name))
 
     # Filter images and segmentations to only include patients with the specified subtype

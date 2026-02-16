@@ -49,6 +49,16 @@ def main(experiment_name, modality, version, mode, type, overfit=0):
         label_name = ['Huvosnew']
     
     if type == 'Conventional_OS':
+        images_dict, segs_dict, exp_data_dir = get_imgs_by_subtype(modality=modality, version=version, exp_name=type, subtype="conventional")
+        imagedatadir = exp_data_dir
+        label_file = os.path.join(exp_data_dir, 'clinical_features_with_Huvos.csv')
+        label_name = ['Huvosnew']
+
+    if type == 'femur':
+        images_dict, segs_dict, exp_data_dir = get_imgs_by_subtype(modality=modality, version=version, exp_name=type, subtype="loc_prim_code", col_name='loc_prim_code')
+        imagedatadir = exp_data_dir
+        label_file = os.path.join(exp_data_dir, 'clinical_features_with_Huvos.csv')
+        label_name = ['Huvosnew']
 
         
 
@@ -69,7 +79,9 @@ def main(experiment_name, modality, version, mode, type, overfit=0):
 
     # Add dummy images from the directory   
     if (type == 'Children') or (type == 'AYA') or (type == 'Older_adults') \
-        or (type == 'T1W+T1W_FS_C') or (type == 'T1W+T2W_FS') or (type =='T2W_FS+T1W_FS_C') or (type == 'T1W+T1W_FS_C+T2W_FS'):
+        or (type == 'T1W+T1W_FS_C') or (type == 'T1W+T2W_FS') or \
+        (type =='T2W_FS+T1W_FS_C') or (type == 'T1W+T1W_FS_C+T2W_FS') \
+        or (type == 'Conventional_OS') or (type == 'femur'):
         experiment._images_train.append(images_dict)
         experiment._segmentations_train.append(segs_dict) 
     else:
