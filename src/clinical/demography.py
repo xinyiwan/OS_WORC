@@ -201,7 +201,7 @@ def generate_summary_table_by_response(df, variables, response_column='Huvos'):
     return summary_df
 
 def main():
-    data_dir = '/exports/lkeb-hpc/xwan/osteosarcoma/clinical_features/osteosarcoma_t.csv'
+    data_dir = '/gpfs/work1/0/prjs1425/shark/clinical_features/osteosarcoma_t.csv'
     included_df = get_clean_data(data_dir)
     
     variables = ['Age_Start', 'sex', 'pres_sympt', 

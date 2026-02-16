@@ -40,7 +40,7 @@ def get_clean_data(data_dir):
 
     # Get pids
     included_df = get_baseline_df(df)
-    included_df.to_csv('/exports/lkeb-hpc/xwan/osteosarcoma/preprocessing/clinical_analysis/included_pid_full_cli_info.csv', index=False)
+    included_df.to_csv('/gpfs/work1/0/prjs1425/shark/preprocessing/clinical_analysis/included_pid_full_cli_info_loc.csv', index=False)
 
     # Simple cleaning
     included_df['Age_Start'] = included_df['Age_Start'].str.replace(',', '.').astype(float).astype(int)
@@ -49,14 +49,15 @@ def get_clean_data(data_dir):
 
 if __name__ == "__main__":
 
-    data_dir = '/exports/lkeb-hpc/xwan/osteosarcoma/clinical_features/osteosarcoma_t.csv'
+    data_dir = '/gpfs/work1/0/prjs1425/shark/clinical_features/osteosarcoma_t.csv'
     included_df = get_clean_data(data_dir)
 
     variables = ['Subject', 
                  'Age_Start', 'sex', 'pres_sympt', 
                  'Location_extremity_no_extremity', 
+                 'loc_prim_code',
                  'Diagnosis_high',
-                #  'path_fract',  should be removed since it overlap with symptons
+                #  'path_fract',  # should be removed since it overlap with symptons
                  'Distant_meta_pres',
                  'Size_primary_tumor', 
                  'CTX_pre_op_new',
@@ -79,8 +80,8 @@ if __name__ == "__main__":
         if col in cat[:-1]:
             input[col] = df_test[col + '_num']
     
-    res_dir = '/exports/lkeb-hpc/xwan/osteosarcoma/preprocessing/clinical_analysis/simpleML'
-    input.to_csv(os.path.join(res_dir,'input.csv'), index=False)
+    res_dir = '/gpfs/work1/0/prjs1425/shark/preprocessing/clinical_analysis/simpleML'
+    input.to_csv(os.path.join(res_dir,'input_loc.csv'), index=False)
     run_simple_ML(input, label, res_dir)
 
     # Save a version for WORC input with 'Patient'
@@ -89,7 +90,7 @@ if __name__ == "__main__":
     cols = input.columns.tolist()
     cols.insert(0, cols.pop(cols.index('Patient')))
     input = input[cols]
-    input.to_csv(os.path.join('/exports/lkeb-hpc/xwan/osteosarcoma/preprocessing/clinical_analysis','WORC_clinical_input.csv'), index=False)
+    input.to_csv(os.path.join('/gpfs/work1/0/prjs1425/shark/preprocessing/clinical_analysis','WORC_clinical_input_loc.csv'), index=False)
 
 
     # Check simple ML for different age group
