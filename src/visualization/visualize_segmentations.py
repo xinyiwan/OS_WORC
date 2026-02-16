@@ -12,13 +12,13 @@ from pathlib import Path
 
 # Configuration
 modalities = ['T1W', 'T1W_FS_C', 'T2W_FS']
-versions = ['v0', 'v1', 'v2']
+versions = ['v0', 'v1', 'v9']
 image_file_name = 'image.nii.gz'
 segmentation_file_name = 'mask.nii.gz'
 base_data_dir = '/projects/0/prjs1425/Osteosarcoma_WORC/exp_data'
 
 # Colors for different versions
-colors = ['red', 'green', 'blue']
+colors = ['blue', 'yellow', 'pink']
 version_colors = dict(zip(versions, colors))
 
 
@@ -132,7 +132,7 @@ def get_patient_ids(modality, version='v0'):
     return sorted(patient_ids)
 
 
-def plot_segs(modality, patient_id, output_dir='output_visualizations'):
+def plot_segs(modality, patient_id, output_dir='output_visualizations', add_title=True, versions=versions):
     """
     Plot segmentations of 3 versions on the same image. Only plot the contour of each segmentation.
     Images are all NIfTI files.
@@ -209,14 +209,15 @@ def plot_segs(modality, patient_id, output_dir='output_visualizations'):
             ax.plot([], [], color=version_colors[version], linewidth=2, label=version)
 
     # Add legend
-    ax.legend(loc='upper right', fontsize=12)
+    ax.legend(loc='upper left', fontsize=12)
 
     # Add title
     axis_names = ['Sagittal', 'Coronal', 'Axial']
-    ax.set_title(f'{modality} - {patient_id}\n'
-                 f'{axis_names[slice_axis]} Slice {slice_idx} - '
-                 f'Segmentation Comparison (v0=red, v1=green, v2=blue)',
-                 fontsize=14, fontweight='bold')
+    if add_title == True:
+        ax.set_title(f'{modality} - {patient_id}\n'
+                    f'{axis_names[slice_axis]} Slice {slice_idx} - '
+                    f'Segmentation Comparison (v0=red, v1=green, v2=blue)',
+                    fontsize=14, fontweight='bold')
 
     ax.axis('off')
 
@@ -271,4 +272,18 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    # main()
+
+    # A
+    plot_segs('T1W', 'OS_000004_01', output_dir='output_visualizations/examples', add_title=False, versions=['v9'])
+    # B
+    plot_segs('T1W_FS_C', 'OS_000061_01', output_dir='output_visualizations/examples', add_title=False, versions=['v9'])
+
+    # C
+    plot_segs('T2W_FS', 'OS_000093_01', output_dir='output_visualizations/examples', add_title=False, versions=['v0','v9'])
+    # D
+    plot_segs('T1W_FS_C', 'OS_000071_01', output_dir='output_visualizations/examples', add_title=False, versions=['v0','v9'])
+    
+    # E
+    plot_segs('T1W_FS_C', 'OS_000094_02', output_dir='output_visualizations/examples', add_title=False, versions=['v0', 'v1','v9'])
+
