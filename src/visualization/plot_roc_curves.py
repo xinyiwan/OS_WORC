@@ -74,7 +74,9 @@ def load_roc_data(csv_path):
 
     for idx, row in df.iterrows():
         fpr_values = parse_array_string(row['FPR'])
+        fpr_values = [np.mean(fpr_values)]
         tpr_values = parse_array_string(row['TPR'])
+        tpr_values = [np.mean(tpr_values)]
 
         if fpr_values is not None and tpr_values is not None:
             fpr_list.extend(fpr_values)
@@ -221,15 +223,15 @@ def main():
     import argparse
 
     csv_files = [
-        'path/to/model1_roc.csv',
-        'path/to/model2_roc.csv',
-        'path/to/model3_roc.csv'
+        '/scratch-shared/xwan/Osteosarcoma/res/WORC_cli_T1W_v1_femur/Evaluation/ROC_all_0.csv',
+        '/scratch-shared/xwan/Osteosarcoma/res/WORC_cli_T1W_FS_C_v1_Conv/Evaluation/ROC_all_0.csv',
+        '/scratch-shared/xwan/Osteosarcoma/res/WORC_cli_T2W_FS_v1_Conv/Evaluation/ROC_all_0.csv'
     ]
 
     labels = [
-        'Random Forest',
-        'Logistic Regression',
-        'SVM'
+        'Femur_T1W',
+        'Conv OS_T1W_FS_C',
+        'Conv OS_T2W_FS'
     ]
     # Plot
     plot_roc_curves(
