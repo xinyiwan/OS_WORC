@@ -118,7 +118,7 @@ def calculate_auc_with_ci(fpr, tpr):
 
 
 def plot_roc_curves(csv_files, labels=None, output_path=None, title='Receiver Operating Characteristic',
-                   colors=None, show_diagonal=True, figsize=(10, 8), dpi=150):
+                   colors=None, show_diagonal=True, show_crosshairs=True, figsize=(10, 8), dpi=150):
     """
     Plot multiple ROC curves from CSV files on the same figure.
 
@@ -136,6 +136,8 @@ def plot_roc_curves(csv_files, labels=None, output_path=None, title='Receiver Op
         Colors for each curve. If None, uses default color cycle
     show_diagonal : bool
         Whether to show the diagonal reference line (random classifier)
+    show_crosshairs : bool
+        Whether to show light gray crosshair lines at each point
     figsize : tuple
         Figure size (width, height)
     dpi : int
@@ -173,9 +175,19 @@ def plot_roc_curves(csv_files, labels=None, output_path=None, title='Receiver Op
             # Calculate AUC
             auc_score = calculate_auc_with_ci(fpr, tpr)
 
-            # Plot ROC curve
+            # Draw crosshair lines at each point if requested
+            if show_crosshairs:
+                for x, y in zip(fpr, tpr):
+                    # Horizontal line from y-axis to point
+                    ax.plot([0, x], [y, y], color='lightgray', linewidth=0.5,
+                           alpha=0.3, zorder=1)
+                    # Vertical line from x-axis to point
+                    ax.plot([x, x], [0, y], color='lightgray', linewidth=0.5,
+                           alpha=0.3, zorder=1)
+
+            # Plot ROC curve (on top of crosshairs)
             ax.plot(fpr, tpr, color=color, linewidth=2,
-                   label=f'{label} (AUC = {auc_score:.2f})')
+                   label=f'{label} (AUC = {auc_score:.2f})', zorder=2)
 
             print(f"Plotted {label}: AUC = {auc_score:.2f}")
 
@@ -239,7 +251,8 @@ def main():
         labels=labels,
         output_path='multiple_roc_comparison.png',
         title='ROC Curves - Model Comparison',
-        colors = ['orange', 'blue', 'green'],
+        colors=['orange', 'blue', 'green'],
+        show_crosshairs=True  # Show light gray crosshair lines at each point
     )
 
 
