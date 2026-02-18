@@ -235,10 +235,11 @@ def main():
     Main function to run the metadata merge and summary generation.
     """
     # Define file paths (modify these as needed)
-    current_csv_path = "path/to/current.csv"
-    source_csv_path = "path/to/source.csv"
-    output_merged_path = "path/to/merged_output.csv"
-    output_summary_path = "path/to/summary_report.txt"
+    current_csv_path = "/projects/0/prjs1425/shark/preprocessing/modality/included_images_app.csv"
+    source_csv_path = "/projects/0/prjs1425/shark/image_records/Osteo_Sarcoma_xnatsort_20250319.csv"
+
+    output_merged_path = "/projects/0/prjs1425/shark/preprocessing/meta/merged_output.csv"
+    output_summary_path = "/projects/0/prjs1425/shark/preprocessing/meta/summary_report.txt"
 
     # Load and merge metadata
     merged_df = load_and_merge_metadata(
@@ -257,11 +258,6 @@ def main():
 
 
 if __name__ == "__main__":
-    # Example usage with actual file paths
-    # Update these paths to your actual CSV files
-
-    current_csv = "current.csv"  # Replace with your current CSV path
-    source_csv = "source.csv"    # Replace with your source CSV path
 
     # Run the merge and summary
     merged_df, summary = main()
