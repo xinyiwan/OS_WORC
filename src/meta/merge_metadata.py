@@ -79,6 +79,8 @@ def create_summary_table(merged_df):
     """
     Create summary table with overview of included MRI sequences and acquisition parameters.
 
+    Format: Rows are parameters/categories, Columns are modalities (T1W, T1W_FS_CE, T2W_FS)
+
     Parameters:
     -----------
     merged_df : pd.DataFrame
@@ -86,148 +88,212 @@ def create_summary_table(merged_df):
 
     Returns:
     --------
-    summary_dict : dict
-        Dictionary containing summary statistics
+    summary_table : pd.DataFrame
+        Formatted summary table with modalities as columns
     """
     print("\n" + "="*80)
     print("OVERVIEW OF INCLUDED MRI SEQUENCES AND ACQUISITION PARAMETERS")
     print("="*80)
 
-    summary_dict = {}
-
     # Filter only included images
     included_df = merged_df[merged_df['included'] == 'yes'].copy()
 
-    # 1. Number of images and subjects per modality
-    print("\n1. NUMBER OF IMAGES AND SUBJECTS PER MODALITY")
+    # Get unique modalities
+    modalities = sorted(included_df['modality'].unique())
+
+    # Initialize list to store rows
+    summary_rows = []
+
+    # Helper function to add a row
+    def add_row(category, subcategory, values_dict):
+        row = {'Category': category, 'Parameter': subcategory}
+        for modality in modalities:
+            row[modality] = values_dict.get(modality, '-')
+        summary_rows.append(row)
+
+    # 1. Magnetic field strength (Tesla) - use actual unique values from data
+    print("\n1. Magnetic Field Strength Distribution")
     print("-" * 80)
 
-    modality_summary = included_df.groupby('modality').agg({
-        'image_name': 'count',
-        'Subject': 'nunique'
-    }).rename(columns={
-        'image_name': 'Number of Images',
-        'Subject': 'Number of Subjects'
-    })
+    if 'Tesla' in included_df.columns:
+        # Get unique Tesla values from the data
+        tesla_values = sorted(included_df['Tesla'].dropna().unique())
 
-    print(modality_summary)
-    summary_dict['modality_summary'] = modality_summary
+        for tesla in tesla_values:
+            values_dict = {}
+            for modality in modalities:
+                mod_data = included_df[included_df['modality'] == modality]
+                count = (mod_data['Tesla'] == tesla).sum()
+                total = len(mod_data)
 
-    # 2. Distribution of metadata features
-    metadata_features = [
-        'Manufacturer', 'slice_thickness',
-        'Repetition Time (ms)', 'Echo Time (ms)',
-        'Inversion Time (ms)', 'Tesla'
-    ]
+                if count > 0 and total > 0:
+                    percentage = (count / total) * 100
+                    values_dict[modality] = f"{count} ({percentage:.1f}%)"
+                else:
+                    values_dict[modality] = '-'
 
-    print("\n2. DISTRIBUTION OF ACQUISITION PARAMETERS")
+            # Format Tesla label (e.g., 1.5T -> 1·5T)
+            tesla_label = f"{tesla:.1f}T".replace('.', '·')
+            add_row('Magnetic field strength', tesla_label, values_dict)
+
+    # 2. Manufacturer - use actual unique values from data
+    print("\n2. Manufacturer Distribution")
     print("-" * 80)
 
-    for feature in metadata_features:
-        if feature not in included_df.columns:
-            print(f"\n{feature}: Column not found")
-            continue
+    if 'Manufacturer' in included_df.columns:
+        # Get unique manufacturers from the data
+        manufacturers = included_df['Manufacturer'].dropna().unique()
 
-        print(f"\n{feature}:")
-
-        # For categorical features
-        if feature == 'Manufacturer' or included_df[feature].dtype == 'object':
-            value_counts = included_df[feature].value_counts(dropna=False)
-            print(value_counts)
-            summary_dict[feature] = value_counts
-
-        # For numerical features
-        else:
-            # Remove NaN values for statistics
-            valid_values = included_df[feature].dropna()
-
-            if len(valid_values) > 0:
-                stats = {
-                    'count': len(valid_values),
-                    'mean': valid_values.mean(),
-                    'std': valid_values.std(),
-                    'min': valid_values.min(),
-                    '25%': valid_values.quantile(0.25),
-                    '50%': valid_values.quantile(0.50),
-                    '75%': valid_values.quantile(0.75),
-                    'max': valid_values.max(),
-                    'missing': included_df[feature].isna().sum()
-                }
-
-                stats_df = pd.DataFrame(stats, index=[feature])
-                print(stats_df.T)
-                summary_dict[f"{feature}_stats"] = stats_df
-
-                # Also show unique values distribution if not too many
-                unique_values = valid_values.nunique()
-                if unique_values <= 20:
-                    print(f"\nValue distribution:")
-                    value_counts = included_df[feature].value_counts(dropna=False)
-                    print(value_counts)
-                    summary_dict[f"{feature}_distribution"] = value_counts
+        # Extract manufacturer name (e.g., "PHILIPS MEDICAL SYSTEMS" -> "PHILIPS")
+        manufacturer_names = set()
+        for manuf in manufacturers:
+            manuf_upper = str(manuf).upper()
+            for key in ['SIEMENS', 'GE', 'PHILIPS', 'TOSHIBA', 'HITACHI']:
+                if key in manuf_upper:
+                    manufacturer_names.add(key)
+                    break
             else:
-                print("No valid values found")
+                # If no known manufacturer found, add the full name
+                manufacturer_names.add(str(manuf))
 
-    # 3. Cross-tabulation: Modality vs Manufacturer
-    print("\n3. MODALITY VS MANUFACTURER")
+        # Add Unknown for missing values
+        if included_df['Manufacturer'].isna().any():
+            manufacturer_names.add('Unknown')
+
+        # Sort manufacturers
+        manufacturer_names = sorted(manufacturer_names)
+
+        for manuf in manufacturer_names:
+            values_dict = {}
+            for modality in modalities:
+                mod_data = included_df[included_df['modality'] == modality]
+
+                if manuf == 'Unknown':
+                    count = mod_data['Manufacturer'].isna().sum()
+                else:
+                    count = mod_data['Manufacturer'].str.upper().str.contains(manuf, na=False).sum()
+
+                total = len(mod_data)
+
+                if count > 0 and total > 0:
+                    percentage = (count / total) * 100
+                    values_dict[modality] = f"{count} ({percentage:.1f}%)"
+                else:
+                    values_dict[modality] = '-'
+
+            add_row('Manufacturer', manuf.title(), values_dict)
+
+    # 3. Settings (mean ± variance)
+    print("\n3. Acquisition Settings")
     print("-" * 80)
-    crosstab = pd.crosstab(
-        included_df['modality'],
-        included_df['Manufacturer'],
-        margins=True
-    )
-    print(crosstab)
-    summary_dict['modality_manufacturer_crosstab'] = crosstab
 
-    # 4. Summary by modality
-    print("\n4. ACQUISITION PARAMETERS BY MODALITY")
+    # Slice Thickness
+    values_dict = {}
+    for modality in modalities:
+        mod_data = included_df[included_df['modality'] == modality]
+        if 'slice_thickness' in mod_data.columns:
+            valid_data = mod_data['slice_thickness'].dropna()
+            if len(valid_data) > 0:
+                mean_val = valid_data.mean()
+                var_val = valid_data.var()
+                values_dict[modality] = f"{mean_val:.1f} ± {var_val:.1f}"
+            else:
+                values_dict[modality] = '-'
+        else:
+            values_dict[modality] = '-'
+    add_row('Setting (Unit)', 'Slice Thickness (mm)*', values_dict)
+
+    # Repetition Time
+    values_dict = {}
+    for modality in modalities:
+        mod_data = included_df[included_df['modality'] == modality]
+        if 'Repetition Time (ms)' in mod_data.columns:
+            valid_data = mod_data['Repetition Time (ms)'].dropna()
+            if len(valid_data) > 0:
+                mean_val = valid_data.mean()
+                var_val = valid_data.var()
+                values_dict[modality] = f"{mean_val:.1f} ± {var_val:.1f}"
+            else:
+                values_dict[modality] = '-'
+        else:
+            values_dict[modality] = '-'
+    add_row('Setting (Unit)', 'Repetition time (ms)*', values_dict)
+
+    # Echo Time
+    values_dict = {}
+    for modality in modalities:
+        mod_data = included_df[included_df['modality'] == modality]
+        if 'Echo Time (ms)' in mod_data.columns:
+            valid_data = mod_data['Echo Time (ms)'].dropna()
+            if len(valid_data) > 0:
+                mean_val = valid_data.mean()
+                var_val = valid_data.var()
+                values_dict[modality] = f"{mean_val:.1f} ± {var_val:.1f}"
+            else:
+                values_dict[modality] = '-'
+        else:
+            values_dict[modality] = '-'
+    add_row('Setting (Unit)', 'Echo time (ms)*', values_dict)
+
+    # 4. Available sequences (count of images)
+    print("\n4. Available Sequences and Subjects")
     print("-" * 80)
 
-    numerical_features = [
-        'slice_thickness', 'Repetition Time (ms)',
-        'Echo Time (ms)', 'Inversion Time (ms)', 'Tesla'
-    ]
+    values_dict = {}
+    for modality in modalities:
+        count = len(included_df[included_df['modality'] == modality])
+        values_dict[modality] = count
+    add_row('', 'Available sequences', values_dict)
 
-    for feature in numerical_features:
-        if feature in included_df.columns:
-            print(f"\n{feature} by modality:")
-            modality_stats = included_df.groupby('modality')[feature].agg([
-                'count', 'mean', 'std', 'min', 'max'
-            ]).round(2)
-            print(modality_stats)
-            summary_dict[f"{feature}_by_modality"] = modality_stats
+    # 5. Available subjects (unique count)
+    values_dict = {}
+    for modality in modalities:
+        count = included_df[included_df['modality'] == modality]['Subject'].nunique()
+        values_dict[modality] = count
+    add_row('', 'Available subjects', values_dict)
 
-    return summary_dict
+    # Create DataFrame
+    summary_table = pd.DataFrame(summary_rows)
+
+    # Set multi-index for better display
+    summary_table = summary_table.set_index(['Category', 'Parameter'])
+
+    print("\n" + "="*80)
+    print("SUMMARY TABLE")
+    print("="*80)
+    print(summary_table)
+
+    return summary_table
 
 
-def save_summary_to_file(summary_dict, output_path):
+def save_summary_to_file(summary_table, output_path):
     """
-    Save summary statistics to a text file.
+    Save summary table to CSV and text files.
 
     Parameters:
     -----------
-    summary_dict : dict
-        Dictionary containing summary statistics
+    summary_table : pd.DataFrame
+        Summary table with modalities as columns
     output_path : str
         Path to save the summary file
     """
-    with open(output_path, 'w') as f:
+    # Save as CSV
+    csv_path = output_path.replace('.txt', '.csv') if output_path.endswith('.txt') else output_path
+    summary_table.to_csv(csv_path)
+    print(f"\nSummary table saved to: {csv_path}")
+
+    # Also save as formatted text file
+    txt_path = csv_path.replace('.csv', '_formatted.txt')
+    with open(txt_path, 'w') as f:
         f.write("="*80 + "\n")
         f.write("OVERVIEW OF INCLUDED MRI SEQUENCES AND ACQUISITION PARAMETERS\n")
         f.write("="*80 + "\n\n")
+        f.write(summary_table.to_string())
+        f.write("\n\n")
+        f.write("* Values shown as: mean ± variance for continuous variables\n")
+        f.write("  or count (percentage%) for categorical variables\n")
 
-        for key, value in summary_dict.items():
-            f.write(f"\n{key}:\n")
-            f.write("-" * 80 + "\n")
-            if isinstance(value, pd.DataFrame):
-                f.write(value.to_string())
-            elif isinstance(value, pd.Series):
-                f.write(value.to_string())
-            else:
-                f.write(str(value))
-            f.write("\n\n")
-
-    print(f"\nSummary saved to: {output_path}")
+    print(f"Formatted summary saved to: {txt_path}")
 
 
 def main():
@@ -249,12 +315,12 @@ def main():
     )
 
     # Create summary table
-    summary_dict = create_summary_table(merged_df)
+    summary_table = create_summary_table(merged_df)
 
     # Save summary to file
-    save_summary_to_file(summary_dict, output_summary_path)
+    save_summary_to_file(summary_table, output_summary_path)
 
-    return merged_df, summary_dict
+    return merged_df, summary_table
 
 
 if __name__ == "__main__":
