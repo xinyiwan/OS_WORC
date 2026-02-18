@@ -1,6 +1,7 @@
 import pandas as pd
 import os
 import re
+from combine_performance import get_numbers_sub, get_numbers_features
 
 def get_performance(json_path):
     try:
@@ -45,20 +46,6 @@ def get_combined_performance(exp_name, method='majority'):
         return {}
     
 
-def get_numbers(json_path):
-    try:
-        # Read the JSON file
-        features_path = os.path.join(os.path.dirname(json_path), 'Features')
-        
-        # get number of files under features_path
-        feature_files = [f for f in os.listdir(features_path) if os.path.isfile(os.path.join(features_path, f))]
-        num_features = int(len(feature_files) / 4)
-        
-        return num_features
-    
-    except Exception as e:
-        print(f"Error reading {json_path}: {e}")
-        return {}
 
 def format_performance_value(value):
     """Format performance value to extract numbers and format to 3 decimal places"""
@@ -111,7 +98,7 @@ if __name__ == "__main__":
         # majority_performance = get_combined_performance(exp_name, method = 'majority')
         # mean_performance = get_combined_performance(exp_name, method = 'average')
         # max_prob_performance = get_combined_performance(exp_name, method = 'max_prob')
-        numbers = get_numbers(json_path)
+        numbers = get_numbers_sub(json_path)
         
         def add_performance_data(exp_name, performance, numbers):
             if performance:

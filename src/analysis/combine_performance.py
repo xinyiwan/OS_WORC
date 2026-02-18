@@ -45,7 +45,7 @@ def get_combined_performance(exp_name, method='majority'):
         return {}
     
 
-def get_numbers(json_path):
+def get_numbers_features(json_path):
     try:
         # Read the JSON file
         features_path = os.path.join(os.path.dirname(json_path), 'Features')
@@ -60,30 +60,52 @@ def get_numbers(json_path):
         print(f"Error reading {json_path}: {e}")
         return {}
 
+def get_numbers_sub(json_path):
+    try:
+        # Read the JSON file
+        data = pd.read_json(json_path)
+        
+        # Extract the Statistics series
+        subjects = data['Rankings']['Percentages']
+        numbers = len(subjects.keys())
+        return numbers
+    
+    except Exception as e:
+        print(f"Error reading {json_path}: {e}")
+        return {}
+    
 def format_performance_value(value):
-    """Format performance value to extract numbers and format to 3 decimal places"""
+    """Format performance value to extract numbers and format to 2 decimal places"""
     if pd.isna(value):
         return ""
     
     value_str = str(value)
     
-    # Pattern to match numbers like 0.49886843938424735 (0.3597529228855517, 0.637...)
-    pattern = r'(\d+\.\d+)'
+    # Pattern to match any number (including negative and positive with decimals)
+    pattern = r'(-?\d+\.\d+|-?\d+)'
+    
     matches = re.findall(pattern, value_str)
     
     if matches:
-        # Format each number to 3 decimal places
+        # Format each number to 2 decimal places with bounds checking
         formatted_numbers = []
         for match in matches:
             try:
                 num = float(match)
-                formatted_num = f"{num:.3f}"
+                # Clip values: below 0 becomes 0, above 1 becomes 1
+                if num < 0:
+                    num = 0.0
+                elif num > 1:
+                    num = 1.0
+                formatted_num = f"{num:.2f}"
                 formatted_numbers.append(formatted_num)
             except ValueError:
+                # Keep non-numeric matches as-is
                 formatted_numbers.append(match)
         
         # Reconstruct the formatted string
         if len(formatted_numbers) >= 3:
+            # Format as "main (lower, upper)" - typical for confidence intervals
             return f"{formatted_numbers[0]} ({formatted_numbers[1]}, {formatted_numbers[2]})"
         elif len(formatted_numbers) == 1:
             return formatted_numbers[0]
@@ -91,7 +113,6 @@ def format_performance_value(value):
             return " ".join(formatted_numbers)
     
     return value_str
-
 if __name__ == "__main__":
     exp_names = os.listdir('/exports/lkeb-hpc/xwan/osteosarcoma/OS_res/results')
     
@@ -110,7 +131,7 @@ if __name__ == "__main__":
         majority_performance = get_combined_performance(exp_name, method = 'majority')
         mean_performance = get_combined_performance(exp_name, method = 'average')
         max_prob_performance = get_combined_performance(exp_name, method = 'max_prob')
-        numbers = get_numbers(json_path)
+        numbers = get_numbers_sub(json_path)
         
         def add_performance_data(exp_name, performance, numbers):
             if performance:
