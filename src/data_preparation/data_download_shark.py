@@ -5,13 +5,13 @@ from server_utils import test_ssh_connection, copy_with_rsync
 import subprocess
 
 IMAGE_RECORDS_DIR = '/exports/lkeb-hpc/xwan/osteosarcoma/preprocessing/dataloader/'
-DATA_DIR = '/projects/0/prjs1425/Osteosarcoma_WORC/exp_data'
+DATA_DIR = '/projects/prjs1779/Osteosarcoma/exp_data'
 LOG_DIR = '/exports/lkeb-hpc/xwan/osteosarcoma/logs'
 
 # Remote server configuration
-REMOTE_SERVER = 'snellius-lumc'
-REMOTE_USER = 'xwan'
-REMOTE_BASE_PATH = '/projects/0/prjs1425/Osteosarcoma_WORC/exp_data'
+REMOTE_SERVER = 'snail'
+REMOTE_USER = 'xwan1'
+REMOTE_BASE_PATH = '/projects/prjs1779/Osteosarcoma/exp_data'
 REMOTE_PORT = 22
 
 def create_remote_directory(remote_path, server, user, port=22):
@@ -39,7 +39,7 @@ def download_data(modality='T1W', version='v0', transfer_method='rsync'):
     Execute the data download from SHARK to Snellius using existing CSV with paths.
     """
     # logging file
-    logging.basicConfig(filename=f'{LOG_DIR}/data_download_shark2snellius_{modality}.log', 
+    logging.basicConfig(filename=f'{LOG_DIR}/data_download_shark2snail_{modality}.log', 
                         level=logging.INFO,
                         format='%(asctime)s:%(levelname)s:%(message)s')
 
@@ -128,13 +128,13 @@ def download_data(modality='T1W', version='v0', transfer_method='rsync'):
 if __name__ == "__main__":
     # download_data('T1W', version='v9')
     # download_data('T1W', version='v0')
-    # download_data('T1W', version='v1')
+    download_data('T1W', version='v1')
 
     # download_data('T2W_FS', version='v0')
-    # download_data('T2W_FS', version='v1')
+    download_data('T2W_FS', version='v1')
     # download_data('T2W_FS', version='v9')
 
 
-    download_data('T1W_FS_C', version='v0')
+    # download_data('T1W_FS_C', version='v0')
     download_data('T1W_FS_C', version='v1')
-    download_data('T1W_FS_C', version='v9')
+    # download_data('T1W_FS_C', version='v9')
