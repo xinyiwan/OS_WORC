@@ -168,6 +168,8 @@ def editconfig(mode=0):
     mode 1 - with semantic features
     mode 2 - only use semantic features
     mode 3 - histogram + semantic features
+    mode 4 - wavalet and log features
+    
     """
 
     overrides = {
@@ -236,6 +238,20 @@ def editconfig(mode=0):
                 'wavelet_features': 'False',
                 'log_features': 'False',
             }
+    if mode == 4:
+        # Add semantic features and wavelet and log features to existing overrides
+        overrides['SelectFeatGroup'] = {
+            'semantic_features': 'True',
+            'wavelet_features': 'True',
+            'log_features': 'True',
+        }
+    if mode == 5:
+        # Add only wavelet features to existing overrides
+        overrides['SelectFeatGroup'] = {
+            'semantic_features': 'False',
+            'wavelet_features': 'True',
+            'log_features': 'False',
+        }
     return overrides
         
 
