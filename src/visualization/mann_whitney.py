@@ -95,11 +95,13 @@ def shorten_feature_name(name):
 def manhattan_importance(values, labels, feature_labels,
                          output_png=None, mapping=None,
                          threshold_annotated=0.05,
-                         title=None):
+                         title=None, top_n=10):
     """Manhattan-style scatter of -log(p) values, grouped by feature class.
 
     Adapted from WORC.plotting.plot_pvalues_features.manhattan_importance.
-    Points with p < threshold_annotated are annotated with feature_labels.
+    Annotates the ``top_n`` features with the smallest p-values that also
+    satisfy p < threshold_annotated. If ``top_n`` is None, all points below
+    the threshold are annotated.
     """
     f = plt.figure(figsize=(20, 10))
 
@@ -154,12 +156,13 @@ def manhattan_importance(values, labels, feature_labels,
     plt.xlim((0, max(positions)))
 
     plt.yticks([10 ** -i for i in range(ymaxlim, yminlim + 1)],
-               [f'10^-{i}' for i in range(ymaxlim, yminlim + 1)])
+               [f'10-{i}' for i in range(ymaxlim, yminlim + 1)])
     if mapping is None:
-        plt.xticks(color_end, np.arange(len(color_end)) + 1, size=16)
+        plt.xticks(color_end, np.arange(len(color_end)) + 1, size=16,
+                   rotation=45, ha='right')
     else:
         xticks = [mapping[i] for i in unique_labels]
-        plt.xticks(color_end, xticks, size=10)
+        plt.xticks(color_end, xticks, size=10, rotation=45, ha='right')
 
     plt.vlines(vlines, 10 ** -ymaxlim, 10 ** -yminlim,
                linestyles='dotted', linewidth=0.3)
@@ -190,9 +193,14 @@ def manhattan_importance(values, labels, feature_labels,
         plt.title(title, size=14)
 
     offset = np.clip(len(values) / 200, 0.1, 100)
-    annotated_values = [v for v in values if v < threshold_annotated]
-    annotated_pos = [p for p, v in zip(positions, values) if v < threshold_annotated]
-    annotated_labels = [t for t, v in zip(feature_labels, values) if v < threshold_annotated]
+    candidates = [(p, v, t) for p, v, t in zip(positions, values, feature_labels)
+                  if v < threshold_annotated]
+    candidates.sort(key=lambda x: x[1])
+    if top_n is not None:
+        candidates = candidates[:top_n]
+    annotated_pos = [p for p, _, _ in candidates]
+    annotated_values = [v for _, v, _ in candidates]
+    annotated_labels = [t for _, _, t in candidates]
 
     y_offset = -0.1
     for x, y, text in zip(annotated_pos, annotated_values, annotated_labels):
@@ -237,11 +245,11 @@ def load_pvalues_csv(csv_path):
 
 
 def plot_pvalues_from_csv(csv_path, output_png=None, threshold=0.05,
-                          bonferroni=False):
+                          bonferroni=False, top_n=10):
     """Load a CSV and produce a Manhattan plot for the Mann-Whitney p-values.
 
-    Annotates feature labels for points with p < threshold (after optional
-    Bonferroni correction).
+    Annotates the ``top_n`` features (smallest p) below the threshold (after
+    optional Bonferroni correction). Pass ``top_n=None`` to annotate all.
     """
     label_name, df = load_pvalues_csv(csv_path)
 
@@ -278,7 +286,8 @@ def plot_pvalues_from_csv(csv_path, output_png=None, threshold=0.05,
                                 output_png=output_png,
                                 mapping=FEATURE_GROUP_MAPPING,
                                 threshold_annotated=threshold,
-                                title=label_name)
+                                title=label_name,
+                                top_n=top_n)
 
 
 def main():
@@ -290,11 +299,16 @@ def main():
                         help='Annotation/significance threshold (default 0.05)')
     parser.add_argument('--bonferroni', action='store_true',
                         help='Apply Bonferroni correction to the threshold')
+    parser.add_argument('-n', '--top-n', type=int, default=10,
+                        help='Annotate only the top N features (smallest p). '
+                             'Use 0 to annotate all below threshold.')
     args = parser.parse_args()
 
+    top_n = None if args.top_n == 0 else args.top_n
     plot_pvalues_from_csv(args.csv, output_png=args.output,
                           threshold=args.threshold,
-                          bonferroni=args.bonferroni)
+                          bonferroni=args.bonferroni,
+                          top_n=top_n)
 
 
 if __name__ == '__main__':
