@@ -187,6 +187,13 @@ def manhattan_importance(values, labels, feature_labels,
         plt.annotate('p=0.05', (1, 0.05),
                      xytext=(1, 0.05 * 0.95), size=8, color='magenta')
 
+    extra_line = 9e-5
+    if extra_line > 10 ** -yminlim and not np.isclose(threshold_annotated, extra_line):
+        plt.hlines(extra_line, 0, max(positions),
+                   linestyles='dashed', linewidth=1, color='magenta')
+        plt.annotate(f'p={extra_line:g}', (1, extra_line),
+                     xytext=(1, extra_line * 0.95), size=8, color='magenta')
+
     plt.xlabel("Feature groups", size=12)
     plt.ylabel("P-value Mann-Whitney U", size=12)
     if title:
