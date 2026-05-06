@@ -138,7 +138,7 @@ def get_from_performance(csv_file):
 
 
 
-def plot_roc_curves(csv_files, labels=None, output_path=None, title='Receiver Operating Characteristic',
+def plot_roc_curves(csv_files, labels=None, output_path=None, title='',
                    colors=None, show_diagonal=True, show_crosshairs=True, figsize=(10, 8), dpi=150):
     """
     Plot multiple ROC curves from CSV files on the same figure.
@@ -173,7 +173,7 @@ def plot_roc_curves(csv_files, labels=None, output_path=None, title='Receiver Op
     """
     # Default colors similar to the TikZ example
     if colors is None:
-        colors = ['orange', 'blue',  'green', 'purple', 'red', 'brown', 'pink', 'gray']
+        colors = ['red', 'blue',  'green', 'orange', 'purple',  'brown', 'pink', 'gray']
 
     # Default labels
     if labels is None:
@@ -195,11 +195,11 @@ def plot_roc_curves(csv_files, labels=None, output_path=None, title='Receiver Op
 
             # Calculate AUC
             # auc_score = calculate_auc_with_ci(fpr, tpr)
-            if label == 'DL-T1W':
+            if label == 'DL | T1W':
                 auc_score = 0.49
-            elif label == 'DL-T1W CE FS':
+            elif label == 'DL | T1W-FS-CE':
                 auc_score = 0.50
-            elif label == 'DL-T2W FS':
+            elif label == 'DL | T2W-FS':
                 auc_score = 0.51
             else:
                 auc_score = get_from_performance(csv_file)
@@ -211,12 +211,25 @@ def plot_roc_curves(csv_files, labels=None, output_path=None, title='Receiver Op
                     ax.plot([x-0.1, x+0.1], [y, y], color='lightgray', linewidth=0.5,
                            alpha=0.4, zorder=1)
                     # Vertical line from x-axis to point
-                    ax.plot([x, x], [y-0.1, y+0.1], color='lightgray', linewidth=0.5,
+                    ax.plot([x, x], [y-0.1, y+0.1], color='lightgray', linewidth=1,
                            alpha=0.4, zorder=1)
 
             # Plot ROC curve (on top of crosshairs)
-            ax.plot(fpr, tpr, color=color, linewidth=2,
-                   label=f'{label} (AUC = {auc_score:.2f})', zorder=2)
+            if 'All' in label or len(label.split('+')) >2 :
+                ax.plot(fpr, tpr, color=color, linewidth=2, linestyle='-.',
+                    label=f'{label} (AUC = {auc_score:.2f})', zorder=2)
+            elif label == 'ML | T1W-FS-CE' or label =='ML | T1W' or label == 'ML | T2W-FS':
+                ax.plot(fpr, tpr, color=color, linewidth=3, linestyle='-',
+                    label=f'{label} (AUC = {auc_score:.2f})', zorder=2)
+            elif 'DL' in label:
+                ax.plot(fpr, tpr, color=color, linewidth=2, linestyle='--',
+                    label=f'{label} (AUC = {auc_score:.2f})', zorder=2)
+            elif label == 'ML | Clinical model' or label == 'ML | T1W-FS-CE + clinical model' or label == 'ML | T1W + clinical model' or label == 'ML | T2W-FS + clinical model':
+                ax.plot(fpr, tpr, color=color, linewidth=3,
+                    label=f'{label} (AUC = {auc_score:.2f})', zorder=2)
+            else:
+                ax.plot(fpr, tpr, color=color, linewidth=2,
+                    label=f'{label} (AUC = {auc_score:.2f})', zorder=2)
 
             print(f"Plotted {label}: AUC = {auc_score:.2f}")
 
@@ -263,35 +276,35 @@ def main():
     """
     import argparse
 
-    # csv_files = [
-    #     '/projects/0/prjs1425/Osteosarcoma_WORC/OS_WORC_res/WORC_cli_info_only/Evaluation/ROC_all_0.csv',
-    #     '/projects/0/prjs1425/Osteosarcoma_WORC/OS_WORC_res/WORC_cli_T1W_FS_C_v1/Evaluation/ROC_all_0.csv',
-    #     '/projects/0/prjs1425/Osteosarcoma_WORC/OS_WORC_res/WORC_cli_T1W_v1/Evaluation/ROC_all_0.csv',
-    #     '/projects/0/prjs1425/Osteosarcoma_WORC/OS_WORC_res/WORC_cli_T2W_FS_v1/Evaluation/ROC_all_0.csv',
-    #     '/projects/0/prjs1425/Osteosarcoma_WORC/OS_WORC_res/WORC_combo_T1_T1F_1/Evaluation/ROC_all_0.csv',
-    #     '/projects/0/prjs1425/Osteosarcoma_WORC/OS_WORC_res/WORC_combo_T2_T1F_v1/Evaluation/ROC_all_0.csv',
-    #     '/projects/0/prjs1425/Osteosarcoma_WORC/OS_WORC_res/WORC_combo_T1_T2W/Evaluation/ROC_all_0.csv',
-    #     '/projects/0/prjs1425/Osteosarcoma_WORC/OS_WORC_res/WORC_combo_3/Evaluation/ROC_all_0.csv',
-    # ]
-    # labels = [
-    #     'Clinical model',
-    #     'T1W CE FS + clinical model',
-    #     'T1W + clinical model',
-    #     'T2W FS + clinical model',
-    #     'T1W CE FS + T1W + clinical model',
-    #     'T1W CE FS + T2W FS + clinical model',
-    #     'T1W + T2W FS + clinical model',
-    #     'All modalities + clinical model',
-    # ]
-    # # Plot
-    # plot_roc_curves(
-    #     csv_files=csv_files,
-    #     labels=labels,
-    #     output_path='multiple_roc_comparison.png',
-    #     title='(A) Receiver Operating Characteristic Curves',
-    #     # colors=['orange', 'blue', 'green'],
-    #     show_crosshairs=True  # Show light gray crosshair lines at each point
-    # )
+    csv_files = [
+        '/projects/0/prjs1425/Osteosarcoma_WORC/OS_WORC_res/WORC_cli_info_only/Evaluation/ROC_all_0.csv',
+        '/projects/0/prjs1425/Osteosarcoma_WORC/OS_WORC_res/WORC_cli_T1W_FS_C_v1/Evaluation/ROC_all_0.csv',
+        '/projects/0/prjs1425/Osteosarcoma_WORC/OS_WORC_res/WORC_cli_T1W_v1/Evaluation/ROC_all_0.csv',
+        '/projects/0/prjs1425/Osteosarcoma_WORC/OS_WORC_res/WORC_cli_T2W_FS_v1/Evaluation/ROC_all_0.csv',
+        '/projects/0/prjs1425/Osteosarcoma_WORC/OS_WORC_res/WORC_combo_T1_T1F_1/Evaluation/ROC_all_0.csv',
+        '/projects/0/prjs1425/Osteosarcoma_WORC/OS_WORC_res/WORC_combo_T2_T1F_v1/Evaluation/ROC_all_0.csv',
+        '/projects/0/prjs1425/Osteosarcoma_WORC/OS_WORC_res/WORC_combo_T1_T2W/Evaluation/ROC_all_0.csv',
+        '/projects/0/prjs1425/Osteosarcoma_WORC/OS_WORC_res/WORC_combo_3/Evaluation/ROC_all_0.csv',
+    ]
+    labels = [
+        'ML | Clinical model',
+        'ML | T1W-FS-CE + clinical model',
+        'ML | T1W + clinical model',
+        'ML | T2W-FS + clinical model',
+        'ML | T1W-FS-CE + T1W + clinical model',
+        'ML | T1W-FS-CE + T2W-FS + clinical model',
+        'ML | T1W + T2W-FS + clinical model',
+        'ML | All modalities + clinical model',
+    ]
+    # Plot
+    plot_roc_curves(
+        csv_files=csv_files,
+        labels=labels,
+        output_path='multiple_roc_comparison.png',
+        title='(A)',
+        # colors=['orange', 'blue', 'green'],
+        show_crosshairs=True  # Show light gray crosshair lines at each point
+    )
 
     dl_csv_files = [
         '/projects/0/prjs1425/Osteosarcoma_WORC/OS_WORC_res/WORC_T1W_v1/Evaluation/ROC_all_0.csv',
@@ -302,20 +315,20 @@ def main():
         '/projects/0/prjs1425/Osteosarcoma_WORC/OS_CNN_res/pretrain/T2W_FS/roc_curve_ci.csv'
     ]
     dl_labels = [
-        'ML-T1W',
-        'ML-T1W CE FS',
-        'ML-T2W FS',
-        'DL-T1W',
-        'DL-T1W CE FS',
-        'DL-T2W FS',
+        'ML | T1W-FS-CE',
+        'ML | T1W',
+        'ML | T2W-FS',
+        'DL | T1W-FS-CE',
+        'DL | T1W',
+        'DL | T2W-FS',
     ]
 
     plot_roc_curves(
         csv_files=dl_csv_files,
         labels=dl_labels,
         output_path='multiple_roc_comparison_DL.png',
-        title='(B) Receiver Operating Characteristic Curves',
-        # colors=['orange', 'blue', 'green'],
+        title='(B)',
+        colors = ['blue',  'green', 'orange', 'cornflowerblue',  'lime', 'yellow'],
         show_crosshairs=True  # Show light gray crosshair lines at each point
     )
 
