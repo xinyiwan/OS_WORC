@@ -122,6 +122,63 @@ def visualize(task):
 
 
 
+def plot_selected_metrics(combined_df, task):
+    sns.set(style="whitegrid")
+    metric_columns = ['dice', 'hd95', 'precision', 'recall']
+    y_limits = {
+        'dice': [0, 1],
+        'precision': [0, 1],
+        'recall': [0, 1],
+        'hd95': [0, 30],
+    }
+
+    fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+    axes = axes.flatten()
+
+    for i, metric in enumerate(metric_columns):
+        ax = axes[i]
+        data = combined_df[metric].dropna()
+
+        boxplot = ax.boxplot(data, patch_artist=True)
+        boxplot['boxes'][0].set_facecolor('lightblue')
+        boxplot['medians'][0].set_color('red')
+        boxplot['medians'][0].set_linewidth(2)
+        boxplot['whiskers'][0].set_color('black')
+        boxplot['whiskers'][1].set_color('black')
+        boxplot['caps'][0].set_color('black')
+        boxplot['caps'][1].set_color('black')
+        boxplot['fliers'][0].set_markerfacecolor('red')
+        boxplot['fliers'][0].set_markeredgecolor('red')
+        boxplot['fliers'][0].set_alpha(0.6)
+
+        if metric in y_limits:
+            ax.set_ylim(y_limits[metric])
+
+        mean_val = data.mean()
+        median_val = data.median()
+        ax.axhline(mean_val, color='green', linestyle='--', alpha=0.7, label=f'Mean: {mean_val:.2f}')
+
+        stats_text = f'N: {len(data)}\nMean: {mean_val:.2f}\nMedian: {median_val:.2f}'
+        ax.text(0.95, 0.95, stats_text, transform=ax.transAxes,
+                ha='right', va='top', fontsize=9,
+                bbox=dict(boxstyle='round', facecolor='white', alpha=0.9))
+
+        ax.set_title(f'{metric.upper()} Distribution', fontweight='bold', fontsize=12)
+        ax.set_ylabel('Value', fontsize=10)
+        ax.grid(True, alpha=0.3)
+        ax.legend()
+
+    plt.tight_layout()
+    if task == 'dice_0':
+        plt.suptitle('Segmentation Metrics - V0 - V2', fontsize=14, fontweight='bold', y=1.02)
+    if task == 'dice':
+        plt.suptitle('Segmentation Metrics - V1 - V2', fontsize=14, fontweight='bold', y=1.02)
+
+    plt.savefig(f'/projects/0/prjs1425/shark/preprocessing/dice_analysis/{task}_selected.png',
+        bbox_inches='tight', dpi=300, facecolor='white')
+    plt.show()
+
+
 def create_comparison_table(df_0, df_1):
     """
     Create a comparison table with mean ± std for both DataFrames and statistical tests
@@ -292,6 +349,9 @@ def create_comparison_table(df_0, df_1):
 if __name__ == "__main__":
     df_0 = visualize('dice_0')
     df_1 = visualize('dice')
+
+    plot_selected_metrics(df_0, 'dice_0')
+    plot_selected_metrics(df_1, 'dice')
 
     # df_0['id'] = df_0['filename'].apply(lambda x: x.split('/')[6] if 'lkeb' in x else x.split('/')[7])
     # unique_ids_0, counts = np.unique(df_0.id.values.tolist(), return_counts=True)
