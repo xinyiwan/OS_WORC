@@ -150,11 +150,12 @@ def plot_selected_metrics(df_0, df_1):
         data_1 = df_1[metric].dropna()
 
         boxplot = ax.boxplot(
-            [data_0, data_1], patch_artist=False, labels=group_labels,
+            [data_0, data_1], patch_artist=True, labels=group_labels,
             showmeans=False, meanline=False,
         )
         for box, color in zip(boxplot['boxes'], group_colors):
             box.set_facecolor(color)
+            box.set_edgecolor('black')
         for median in boxplot['medians']:
             median.set_visible(False)
         for whisker in boxplot['whiskers']:
@@ -188,7 +189,7 @@ def plot_selected_metrics(df_0, df_1):
         # ]
         # ax.legend(handles=legend_handles, loc='lower right', fontsize=9)
 
-        ax.set_title(f'{metric.upper()} Distribution', fontweight='bold', fontsize=12)
+        ax.set_title(f'{metric_display[metric]} Distribution', fontweight='bold', fontsize=12)
         ax.set_ylabel('Value', fontsize=10)
         ax.grid(True, alpha=0.3)
 
