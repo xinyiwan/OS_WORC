@@ -38,7 +38,7 @@ def visualize(task):
 
     # plot
     # Set up the style
-    sns.set(style="whitegrid")
+    # sns.set(style="whitegrid")
     plt.figure(figsize=(15, 10))
 
     # Create a melted DataFrame for easier plotting with seaborn
@@ -127,10 +127,10 @@ def plot_selected_metrics(df_0, df_1):
     sns.set(style="whitegrid")
     metric_columns = ['dice', 'hd95', 'precision', 'recall']
     y_limits = {
-        'dice': [0, 1.4],
-        'precision': [0, 1.4],
-        'recall': [0, 1.4],
-        'hd95': [0, 80],
+        'dice': [0, 1.1],
+        'precision': [0, 1.1],
+        'recall': [0, 1.1],
+        'hd95': [0, 40],
     }
     group_labels = ['V1-V3', 'V2-V3']
     group_colors = ['lightblue', 'lightgreen']
@@ -145,17 +145,17 @@ def plot_selected_metrics(df_0, df_1):
 
         boxplot = ax.boxplot(
             [data_0, data_1], patch_artist=True, labels=group_labels,
-            showmeans=True, meanline=True,
+            showmeans=True, meanline=False,
         )
         for box, color in zip(boxplot['boxes'], group_colors):
             box.set_facecolor(color)
-        for median in boxplot['medians']:
-            median.set_color('red')
-            median.set_linewidth(2)
-        for mean in boxplot['means']:
-            mean.set_color('blue')
-            mean.set_linewidth(2)
-            mean.set_linestyle('--')
+        # for median in boxplot['medians']:
+        #     median.set_color('red')
+        #     median.set_linewidth(2)
+        # for mean in boxplot['means']:
+        #     mean.set_color('blue')
+        #     mean.set_linewidth(2)
+        #     mean.set_linestyle('--')
         for whisker in boxplot['whiskers']:
             whisker.set_color('black')
         for cap in boxplot['caps']:
@@ -168,22 +168,22 @@ def plot_selected_metrics(df_0, df_1):
         if metric in y_limits:
             ax.set_ylim(y_limits[metric])
 
-        mean_0, median_0 = data_0.mean(), data_0.median()
-        mean_1, median_1 = data_1.mean(), data_1.median()
+        # mean_0, median_0 = data_0.mean(), data_0.median()
+        # mean_1, median_1 = data_1.mean(), data_1.median()
 
-        stats_text = (
-            f"{group_labels[0]}  N={len(data_0)}  Mean={mean_0:.2f}  Median={median_0:.2f}\n"
-            f"{group_labels[1]}  N={len(data_1)}  Mean={mean_1:.2f}  Median={median_1:.2f}"
-        )
-        ax.text(0.95, 0.95, stats_text, transform=ax.transAxes,
-                ha='right', va='top', fontsize=9,
-                bbox=dict(boxstyle='round', facecolor='white', alpha=0.9))
+        # stats_text = (
+        #     f"{group_labels[0]}  N={len(data_0)}  Mean={mean_0:.2f}  Median={median_0:.2f}\n"
+        #     f"{group_labels[1]}  N={len(data_1)}  Mean={mean_1:.2f}  Median={median_1:.2f}"
+        # )
+        # ax.text(0.95, 0.95, stats_text, transform=ax.transAxes,
+        #         ha='right', va='top', fontsize=9,
+        #         bbox=dict(boxstyle='round', facecolor='white', alpha=0.9))
 
-        legend_handles = [
-            Line2D([0], [0], color='red', linewidth=2, label='Median'),
-            Line2D([0], [0], color='blue', linewidth=2, linestyle='--', label='Mean'),
-        ]
-        ax.legend(handles=legend_handles, loc='lower right', fontsize=9)
+        # legend_handles = [
+        #     Line2D([0], [0], color='red', linewidth=2, label='Median'),
+        #     Line2D([0], [0], color='blue', linewidth=2, linestyle='--', label='Mean'),
+        # ]
+        # ax.legend(handles=legend_handles, loc='lower right', fontsize=9)
 
         ax.set_title(f'{metric.upper()} Distribution', fontweight='bold', fontsize=12)
         ax.set_ylabel('Value', fontsize=10)
