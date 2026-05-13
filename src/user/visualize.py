@@ -124,7 +124,7 @@ def visualize(task):
 
 
 def plot_selected_metrics(df_0, df_1):
-    sns.set(style="whitegrid")
+    # sns.set(style="whitegrid")
     metric_columns = ['dice', 'hd95', 'precision', 'recall']
     y_limits = {
         'dice': [0, 1.1],
@@ -144,8 +144,8 @@ def plot_selected_metrics(df_0, df_1):
         data_1 = df_1[metric].dropna()
 
         boxplot = ax.boxplot(
-            [data_0, data_1], patch_artist=True, labels=group_labels,
-            showmeans=True, meanline=False,
+            [data_0, data_1], patch_artist=False, labels=group_labels,
+            showmeans=False, meanline=False,
         )
         for box, color in zip(boxplot['boxes'], group_colors):
             box.set_facecolor(color)
@@ -275,7 +275,7 @@ def create_comparison_table(df_0, df_1):
                 elif p_value < 0.05:
                     significance = "*"
                 
-                p_value_str = f"{p_value}{significance} ({test_used})"
+                p_value_str = f"{p_str}{significance} ({test_used})"
                 
             else:
                 p_value_str = "Insufficient data"
