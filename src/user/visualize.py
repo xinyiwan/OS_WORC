@@ -126,6 +126,12 @@ def visualize(task):
 def plot_selected_metrics(df_0, df_1):
     # sns.set(style="whitegrid")
     metric_columns = ['dice', 'hd95', 'precision', 'recall']
+    metric_display = {
+        'dice': 'DCS',
+        'hd95': 'HD95',
+        'precision': 'Precision',
+        'recall': 'Recall',
+    }
     y_limits = {
         'dice': [0, 1.1],
         'precision': [0, 1.1],
@@ -149,21 +155,18 @@ def plot_selected_metrics(df_0, df_1):
         )
         for box, color in zip(boxplot['boxes'], group_colors):
             box.set_facecolor(color)
-        # for median in boxplot['medians']:
-        #     median.set_color('red')
-        #     median.set_linewidth(2)
-        # for mean in boxplot['means']:
-        #     mean.set_color('blue')
-        #     mean.set_linewidth(2)
-        #     mean.set_linestyle('--')
+        for median in boxplot['medians']:
+            median.set_visible(False)
         for whisker in boxplot['whiskers']:
             whisker.set_color('black')
         for cap in boxplot['caps']:
             cap.set_color('black')
         for flier in boxplot['fliers']:
-            flier.set_markerfacecolor('red')
-            flier.set_markeredgecolor('red')
-            flier.set_alpha(0.6)
+            flier.set_marker('o')
+            flier.set_markersize(3)
+            flier.set_markerfacecolor('gray')
+            flier.set_markeredgecolor('gray')
+            flier.set_alpha(0.25)
 
         if metric in y_limits:
             ax.set_ylim(y_limits[metric])
