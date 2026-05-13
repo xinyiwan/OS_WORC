@@ -132,7 +132,7 @@ def get_patient_ids(modality, version='v0'):
     return sorted(patient_ids)
 
 
-def plot_segs(modality, patient_id, output_dir='output_visualizations', add_title=True, versions=versions):
+def plot_segs(modality, patient_id, output_dir='output_visualizations', add_title=True, versions=versions, normalisize=False, clip=True):
     """
     Plot segmentations of 3 versions on the same image. Only plot the contour of each segmentation.
     Images are all NIfTI files.
@@ -184,6 +184,15 @@ def plot_segs(modality, patient_id, output_dir='output_visualizations', add_titl
     # Extract 2D slices
     image_slice = get_slice(image_data, slice_axis, slice_idx)
 
+    # Clip the extreme values for better visualization (optional, can be adjusted based on data)
+    if clip:
+        p1, p99 = np.percentile(image_slice, [1, 99])
+        image_slice = np.clip(image_slice, p1, p99)
+
+    if normalisize:
+        # Normalize image slice for better visualization
+        image_slice = (image_slice - np.min(image_slice)) / (np.max(image_slice) - np.min(image_slice) + 1e-5)  # Avoid division by zero
+
     # Create figure
     fig, ax = plt.subplots(1, 1, figsize=(10, 10))
 
@@ -196,7 +205,7 @@ def plot_segs(modality, patient_id, output_dir='output_visualizations', add_titl
 
         # Plot contour with label
         contours = ax.contour(seg_slice.T, levels=[0.5], colors=version_colors[version],
-                             linewidths=2, origin='lower')
+                             linewidths=3, origin='lower')
 
         # Add label (compatible with newer matplotlib versions)
         if hasattr(contours, 'collections') and len(contours.collections) > 0:
@@ -275,15 +284,15 @@ if __name__ == '__main__':
     # main()
 
     # A
-    plot_segs('T1W', 'OS_000004_01', output_dir='output_visualizations/examples', add_title=False, versions=['v9'])
+    plot_segs('T1W', 'OS_000004_01', output_dir='output_visualizations/examples', add_title=False, versions=['v9'], normalisize=False)
     # B
-    plot_segs('T1W_FS_C', 'OS_000061_01', output_dir='output_visualizations/examples', add_title=False, versions=['v9'])
+    plot_segs('T1W_FS_C', 'OS_000061_01', output_dir='output_visualizations/examples', add_title=False, versions=['v9'], normalisize=False, clip=False)
 
     # C
-    plot_segs('T2W_FS', 'OS_000093_01', output_dir='output_visualizations/examples', add_title=False, versions=['v0','v9'])
+    plot_segs('T2W_FS', 'OS_000093_01', output_dir='output_visualizations/examples', add_title=False, versions=['v0','v9'], normalisize=True, clip=True)
     # D
-    plot_segs('T1W_FS_C', 'OS_000071_01', output_dir='output_visualizations/examples', add_title=False, versions=['v0','v9'])
+    plot_segs('T1W_FS_C', 'OS_000071_01', output_dir='output_visualizations/examples', add_title=False, versions=['v0','v9'], normalisize=False)
     
     # E
-    plot_segs('T1W_FS_C', 'OS_000094_02', output_dir='output_visualizations/examples', add_title=False, versions=['v0', 'v1','v9'])
+    plot_segs('T1W_FS_C', 'OS_000094_02', output_dir='output_visualizations/examples', add_title=False, versions=['v0', 'v1','v9'], normalisize=False)
 
