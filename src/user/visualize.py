@@ -1,6 +1,7 @@
-import pandas as pd 
+import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 import os, glob
 import numpy as np
 from scipy import stats
@@ -126,10 +127,10 @@ def plot_selected_metrics(df_0, df_1):
     sns.set(style="whitegrid")
     metric_columns = ['dice', 'hd95', 'precision', 'recall']
     y_limits = {
-        'dice': [0, 1],
-        'precision': [0, 1],
-        'recall': [0, 1],
-        'hd95': [0, 30],
+        'dice': [0, 1.4],
+        'precision': [0, 1.4],
+        'recall': [0, 1.4],
+        'hd95': [0, 80],
     }
     group_labels = ['V1-V3', 'V2-V3']
     group_colors = ['lightblue', 'lightgreen']
@@ -142,12 +143,19 @@ def plot_selected_metrics(df_0, df_1):
         data_0 = df_0[metric].dropna()
         data_1 = df_1[metric].dropna()
 
-        boxplot = ax.boxplot([data_0, data_1], patch_artist=True, labels=group_labels)
+        boxplot = ax.boxplot(
+            [data_0, data_1], patch_artist=True, labels=group_labels,
+            showmeans=True, meanline=True,
+        )
         for box, color in zip(boxplot['boxes'], group_colors):
             box.set_facecolor(color)
         for median in boxplot['medians']:
             median.set_color('red')
             median.set_linewidth(2)
+        for mean in boxplot['means']:
+            mean.set_color('blue')
+            mean.set_linewidth(2)
+            mean.set_linestyle('--')
         for whisker in boxplot['whiskers']:
             whisker.set_color('black')
         for cap in boxplot['caps']:
@@ -170,6 +178,12 @@ def plot_selected_metrics(df_0, df_1):
         ax.text(0.95, 0.95, stats_text, transform=ax.transAxes,
                 ha='right', va='top', fontsize=9,
                 bbox=dict(boxstyle='round', facecolor='white', alpha=0.9))
+
+        legend_handles = [
+            Line2D([0], [0], color='red', linewidth=2, label='Median'),
+            Line2D([0], [0], color='blue', linewidth=2, linestyle='--', label='Mean'),
+        ]
+        ax.legend(handles=legend_handles, loc='lower right', fontsize=9)
 
         ax.set_title(f'{metric.upper()} Distribution', fontweight='bold', fontsize=12)
         ax.set_ylabel('Value', fontsize=10)
