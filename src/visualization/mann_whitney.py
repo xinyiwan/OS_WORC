@@ -252,7 +252,7 @@ def load_pvalues_csv(csv_path):
 
 
 def plot_pvalues_from_csv(csv_path, output_png=None, threshold=0.05,
-                          bonferroni=False, top_n=10):
+                          bonferroni=True, top_n=10):
     """Load a CSV and produce a Manhattan plot for the Mann-Whitney p-values.
 
     Annotates the ``top_n`` features (smallest p) below the threshold (after
@@ -293,7 +293,6 @@ def plot_pvalues_from_csv(csv_path, output_png=None, threshold=0.05,
                                 output_png=output_png,
                                 mapping=FEATURE_GROUP_MAPPING,
                                 threshold_annotated=threshold,
-                                title=label_name,
                                 top_n=top_n)
 
 
