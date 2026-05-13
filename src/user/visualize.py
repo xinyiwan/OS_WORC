@@ -127,8 +127,8 @@ def plot_selected_metrics(df_0, df_1):
     # sns.set(style="whitegrid")
     metric_columns = ['dice', 'hd95', 'precision', 'recall']
     metric_display = {
-        'dice': 'DCS',
-        'hd95': 'HD95',
+        'dice': 'DSC',
+        'hd95': 'HD95 (mm)',
         'precision': 'Precision',
         'recall': 'Recall',
     }
@@ -194,7 +194,10 @@ def plot_selected_metrics(df_0, df_1):
         ax.grid(True, alpha=0.3)
 
     plt.tight_layout()
-    plt.suptitle('Segmentation Metrics: V1-V3 vs V2-V3', fontsize=14, fontweight='bold', y=1.02)
+    plt.suptitle(
+        'Quality assessment of segmentations at different stages in the interactive workflow',
+        fontsize=14, fontweight='bold', y=1.02,
+    )
 
     plt.savefig('/projects/0/prjs1425/shark/preprocessing/dice_analysis/selected_metrics_comparison.png',
         bbox_inches='tight', dpi=300, facecolor='white')
