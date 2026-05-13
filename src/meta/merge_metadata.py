@@ -128,7 +128,7 @@ def create_summary_table(merged_df):
 
                 if count > 0 and total > 0:
                     percentage = (count / total) * 100
-                    values_dict[modality] = f"{count} ({percentage:.1f}%)"
+                    values_dict[modality] = f"{count} ({percentage:.0f}%)"
                 else:
                     values_dict[modality] = '-'
 
@@ -177,13 +177,13 @@ def create_summary_table(merged_df):
 
                 if count > 0 and total > 0:
                     percentage = (count / total) * 100
-                    values_dict[modality] = f"{count} ({percentage:.1f}%)"
+                    values_dict[modality] = f"{count} ({percentage:.0f}%)"
                 else:
                     values_dict[modality] = '-'
 
             add_row('Manufacturer', manuf.title(), values_dict)
 
-    # 3. Settings (mean ± variance)
+    # 3. Settings (mean ± std)
     print("\n3. Acquisition Settings")
     print("-" * 80)
 
@@ -195,8 +195,8 @@ def create_summary_table(merged_df):
             valid_data = mod_data['slice_thickness'].dropna()
             if len(valid_data) > 0:
                 mean_val = valid_data.mean()
-                var_val = valid_data.var()
-                values_dict[modality] = f"{mean_val:.1f} ± {var_val:.1f}"
+                std_val = valid_data.std()
+                values_dict[modality] = f"{mean_val:.1f} ± {std_val:.1f}"
             else:
                 values_dict[modality] = '-'
         else:
@@ -211,8 +211,8 @@ def create_summary_table(merged_df):
             valid_data = mod_data['Repetition Time (ms)'].dropna()
             if len(valid_data) > 0:
                 mean_val = valid_data.mean()
-                var_val = valid_data.var()
-                values_dict[modality] = f"{mean_val:.1f} ± {var_val:.1f}"
+                std_val = valid_data.std()
+                values_dict[modality] = f"{mean_val:.1f} ± {std_val:.1f}"
             else:
                 values_dict[modality] = '-'
         else:
@@ -227,8 +227,8 @@ def create_summary_table(merged_df):
             valid_data = mod_data['Echo Time (ms)'].dropna()
             if len(valid_data) > 0:
                 mean_val = valid_data.mean()
-                var_val = valid_data.var()
-                values_dict[modality] = f"{mean_val:.1f} ± {var_val:.1f}"
+                std_val = valid_data.std()
+                values_dict[modality] = f"{mean_val:.1f} ± {std_val:.1f}"
             else:
                 values_dict[modality] = '-'
         else:
@@ -290,7 +290,7 @@ def save_summary_to_file(summary_table, output_path):
         f.write("="*80 + "\n\n")
         f.write(summary_table.to_string())
         f.write("\n\n")
-        f.write("* Values shown as: mean ± variance for continuous variables\n")
+        f.write("* Values shown as: mean ± std for continuous variables\n")
         f.write("  or count (percentage%) for categorical variables\n")
 
     print(f"Formatted summary saved to: {txt_path}")

@@ -136,7 +136,7 @@ def generate_summary_table_by_response(df, variables, response_column='Huvos'):
             
             # Add to results
             results['Characteristic'].append('Age_Start')
-            results['N (%)'].append(f"{total_patients} (100.0)")
+            results['N (%)'].append(f"{mean_age} ({std_age:.1f})")
             results['Good Response'].append(f"{good_mean:.1f} ± {good_std:.1f}")
             results['Poor Response'].append(f"{poor_mean:.1f} ± {poor_std:.1f}")
             
@@ -201,7 +201,7 @@ def generate_summary_table_by_response(df, variables, response_column='Huvos'):
     return summary_df
 
 def main():
-    data_dir = '/gpfs/work1/0/prjs1425/shark/clinical_features/osteosarcoma_t.csv'
+    data_dir = '/projects/0/prjs1425/shark/clinical_features/osteosarcoma_t.csv'
     included_df = get_clean_data(data_dir)
     
     variables = ['Age_Start', 'sex', 'pres_sympt', 
@@ -223,7 +223,7 @@ def main():
     summary_table_age = generate_summary_table_by_age(data, variables)
     print("Summary by Age Groups:")
     print(summary_table_age)
-    save_path_age = '/exports/lkeb-hpc/xwan/osteosarcoma/preprocessing/clinical_analysis/demo/demo_by_age.csv'
+    save_path_age = '/projects/0/prjs1425/shark/preprocessing/clinical_analysis/demo/demo_by_age.csv'
     summary_table_age.to_csv(save_path_age, index=False)
 
     
@@ -231,7 +231,7 @@ def main():
     summary_table_response = generate_summary_table_by_response(data, variables)
     print("\nSummary by Response Groups:")
     print(summary_table_response)
-    save_path_response = '/exports/lkeb-hpc/xwan/osteosarcoma/preprocessing/clinical_analysis/demo/demo_by_response.csv'
+    save_path_response = '/projects/0/prjs1425/shark/preprocessing/clinical_analysis/demo/demo_by_response.csv'
     summary_table_response.to_csv(save_path_response, index=False)
 
 if __name__ == "__main__":

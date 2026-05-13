@@ -7,7 +7,7 @@ from scipy import stats
 
 
 def visualize(task):
-    pattern = f'/gpfs/work1/0/prjs1425/shark/OS_seg/OS_000*/*/{task}/*.nii.gz.csv'
+    pattern = f'/projects/0/prjs1425/shark/OS_seg/OS_000*/*/{task}/*.nii.gz.csv'
     matching_paths = glob.glob(pattern)
 
     # exclude
@@ -32,7 +32,7 @@ def visualize(task):
         print(f"\nCombined DataFrame shape: {combined_df.shape}")
 
     # Save the combined CSV
-    output_path = f'/gpfs/work1/0/prjs1425/shark/preprocessing/dice_analysis/combined_{task}.csv'
+    output_path = f'/projects/0/prjs1425/shark/preprocessing/dice_analysis/combined_{task}.csv'
     combined_df.to_csv(output_path, index=False)
 
     # plot
@@ -114,7 +114,7 @@ def visualize(task):
     if task == 'dice':
         plt.suptitle('Segmentation Metrics - V1 - V2', fontsize=12, fontweight='bold', y=1.02)
 
-    plt.savefig(f'/gpfs/work1/0/prjs1425/shark/preprocessing/dice_analysis/{task}.png', 
+    plt.savefig(f'/projects/0/prjs1425/shark/preprocessing/dice_analysis/{task}.png', 
         bbox_inches='tight', dpi=300, facecolor='white')
     plt.show()
 
@@ -200,7 +200,7 @@ def create_comparison_table(df_0, df_1):
                 elif p_value < 0.05:
                     significance = "*"
                 
-                p_value_str = f"{p_str}{significance} ({test_used})"
+                p_value_str = f"{p_value}{significance} ({test_used})"
                 
             else:
                 p_value_str = "Insufficient data"
@@ -218,7 +218,7 @@ def create_comparison_table(df_0, df_1):
     comparison_df = pd.DataFrame(comparison_data)
     
     # Save to CSV
-    comparison_csv_path = '/gpfs/work1/0/prjs1425/shark/preprocessing/dice_analysis/metrics_comparison_with_pvalues.csv'
+    comparison_csv_path = '/projects/0/prjs1425/shark/preprocessing/dice_analysis/metrics_comparison_with_pvalues.csv'
     comparison_df.to_csv(comparison_csv_path, index=False)
     print(f"\nComparison table with p-values saved to: {comparison_csv_path}")
     
