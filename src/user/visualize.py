@@ -110,9 +110,9 @@ def visualize(task):
 
     plt.tight_layout()
     if task == 'dice_0':
-        plt.suptitle('Segmentation Metrics - V0 - V2', fontsize=12, fontweight='bold', y=1.02)
+        plt.suptitle('Segmentation Metrics - V1 - V3', fontsize=12, fontweight='bold', y=1.02)
     if task == 'dice':
-        plt.suptitle('Segmentation Metrics - V1 - V2', fontsize=12, fontweight='bold', y=1.02)
+        plt.suptitle('Segmentation Metrics - V2 - V3', fontsize=12, fontweight='bold', y=1.02)
 
     plt.savefig(f'/projects/0/prjs1425/shark/preprocessing/dice_analysis/{task}.png', 
         bbox_inches='tight', dpi=300, facecolor='white')
@@ -122,7 +122,7 @@ def visualize(task):
 
 
 
-def plot_selected_metrics(combined_df, task):
+def plot_selected_metrics(df_0, df_1):
     sns.set(style="whitegrid")
     metric_columns = ['dice', 'hd95', 'precision', 'recall']
     y_limits = {
@@ -131,34 +131,42 @@ def plot_selected_metrics(combined_df, task):
         'recall': [0, 1],
         'hd95': [0, 30],
     }
+    group_labels = ['V1-V3', 'V2-V3']
+    group_colors = ['lightblue', 'lightgreen']
 
     fig, axes = plt.subplots(2, 2, figsize=(12, 10))
     axes = axes.flatten()
 
     for i, metric in enumerate(metric_columns):
         ax = axes[i]
-        data = combined_df[metric].dropna()
+        data_0 = df_0[metric].dropna()
+        data_1 = df_1[metric].dropna()
 
-        boxplot = ax.boxplot(data, patch_artist=True)
-        boxplot['boxes'][0].set_facecolor('lightblue')
-        boxplot['medians'][0].set_color('red')
-        boxplot['medians'][0].set_linewidth(2)
-        boxplot['whiskers'][0].set_color('black')
-        boxplot['whiskers'][1].set_color('black')
-        boxplot['caps'][0].set_color('black')
-        boxplot['caps'][1].set_color('black')
-        boxplot['fliers'][0].set_markerfacecolor('red')
-        boxplot['fliers'][0].set_markeredgecolor('red')
-        boxplot['fliers'][0].set_alpha(0.6)
+        boxplot = ax.boxplot([data_0, data_1], patch_artist=True, labels=group_labels)
+        for box, color in zip(boxplot['boxes'], group_colors):
+            box.set_facecolor(color)
+        for median in boxplot['medians']:
+            median.set_color('red')
+            median.set_linewidth(2)
+        for whisker in boxplot['whiskers']:
+            whisker.set_color('black')
+        for cap in boxplot['caps']:
+            cap.set_color('black')
+        for flier in boxplot['fliers']:
+            flier.set_markerfacecolor('red')
+            flier.set_markeredgecolor('red')
+            flier.set_alpha(0.6)
 
         if metric in y_limits:
             ax.set_ylim(y_limits[metric])
 
-        mean_val = data.mean()
-        median_val = data.median()
-        ax.axhline(mean_val, color='green', linestyle='--', alpha=0.7, label=f'Mean: {mean_val:.2f}')
+        mean_0, median_0 = data_0.mean(), data_0.median()
+        mean_1, median_1 = data_1.mean(), data_1.median()
 
-        stats_text = f'N: {len(data)}\nMean: {mean_val:.2f}\nMedian: {median_val:.2f}'
+        stats_text = (
+            f"{group_labels[0]}  N={len(data_0)}  Mean={mean_0:.2f}  Median={median_0:.2f}\n"
+            f"{group_labels[1]}  N={len(data_1)}  Mean={mean_1:.2f}  Median={median_1:.2f}"
+        )
         ax.text(0.95, 0.95, stats_text, transform=ax.transAxes,
                 ha='right', va='top', fontsize=9,
                 bbox=dict(boxstyle='round', facecolor='white', alpha=0.9))
@@ -166,15 +174,11 @@ def plot_selected_metrics(combined_df, task):
         ax.set_title(f'{metric.upper()} Distribution', fontweight='bold', fontsize=12)
         ax.set_ylabel('Value', fontsize=10)
         ax.grid(True, alpha=0.3)
-        ax.legend()
 
     plt.tight_layout()
-    if task == 'dice_0':
-        plt.suptitle('Segmentation Metrics - V0 - V2', fontsize=14, fontweight='bold', y=1.02)
-    if task == 'dice':
-        plt.suptitle('Segmentation Metrics - V1 - V2', fontsize=14, fontweight='bold', y=1.02)
+    plt.suptitle('Segmentation Metrics: V1-V3 vs V2-V3', fontsize=14, fontweight='bold', y=1.02)
 
-    plt.savefig(f'/projects/0/prjs1425/shark/preprocessing/dice_analysis/{task}_selected.png',
+    plt.savefig('/projects/0/prjs1425/shark/preprocessing/dice_analysis/selected_metrics_comparison.png',
         bbox_inches='tight', dpi=300, facecolor='white')
     plt.show()
 
@@ -265,9 +269,9 @@ def create_comparison_table(df_0, df_1):
             # Add to comparison data
             comparison_data.append({
                 'Metric': metric.upper(),
-                'V0-V2': result_0,
-                'V1-V2': result_1,
-                'Difference (V1-V2 - V0-V2)': f"{diff:.2f} ({diff_pct:.1f}%)" if not np.isnan(diff_pct) else f"{diff:.2f}",
+                'V1-V3': result_0,
+                'V2-V3': result_1,
+                'Difference (V2-V3 - V1-V3)': f"{diff:.2f} ({diff_pct:.1f}%)" if not np.isnan(diff_pct) else f"{diff:.2f}",
                 'P-value': p_value_str
             })
     
@@ -281,7 +285,7 @@ def create_comparison_table(df_0, df_1):
     
     # Display the table
     print("\n" + "="*120)
-    print("METRICS COMPARISON: V0-V2 vs V1-V2 (with statistical tests)")
+    print("METRICS COMPARISON: V1-V3 vs V2-V3 (with statistical tests)")
     print("="*120)
     print(comparison_df.to_string(index=False))
     print("="*120)
@@ -299,9 +303,9 @@ def create_comparison_table(df_0, df_1):
         p_str = row['P-value']
         if 'p < 0.001' in p_str or ('p =' in p_str and any(marker in p_str for marker in ['*', '**', '***'])):
             metric = row['Metric']
-            v0_val = row['V0-V2'].split(' (n=')[0]
-            v1_val = row['V1-V2'].split(' (n=')[0]
-            diff_info = row['Difference (V1-V2 - V0-V2)']
+            v0_val = row['V1-V3'].split(' (n=')[0]
+            v1_val = row['V2-V3'].split(' (n=')[0]
+            diff_info = row['Difference (V2-V3 - V1-V3)']
             
             # Extract just the p-value number for sorting
             if 'p < 0.001' in p_str:
@@ -314,8 +318,8 @@ def create_comparison_table(df_0, df_1):
             
             significant_results.append({
                 'Metric': metric,
-                'V0-V2': v0_val,
-                'V1-V2': v1_val,
+                'V1-V3': v0_val,
+                'V2-V3': v1_val,
                 'Difference': diff_info,
                 'P-value': p_str,
                 'p_num': p_num
@@ -330,8 +334,8 @@ def create_comparison_table(df_0, df_1):
         for result in significant_results:
             summary_data.append({
                 'Metric': result['Metric'],
-                'V0-V2': result['V0-V2'],
-                'V1-V2': result['V1-V2'],
+                'V1-V3': result['V1-V3'],
+                'V2-V3': result['V2-V3'],
                 'Difference': result['Difference'],
                 'P-value': result['P-value']
             })
@@ -350,8 +354,7 @@ if __name__ == "__main__":
     df_0 = visualize('dice_0')
     df_1 = visualize('dice')
 
-    plot_selected_metrics(df_0, 'dice_0')
-    plot_selected_metrics(df_1, 'dice')
+    plot_selected_metrics(df_0, df_1)
 
     # df_0['id'] = df_0['filename'].apply(lambda x: x.split('/')[6] if 'lkeb' in x else x.split('/')[7])
     # unique_ids_0, counts = np.unique(df_0.id.values.tolist(), return_counts=True)
